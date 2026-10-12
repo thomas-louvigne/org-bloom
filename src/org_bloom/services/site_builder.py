@@ -24,6 +24,7 @@ class SiteBuilder:
         self._writer = writer
         self.broken_links: list[tuple[str, str]] = []
         self.used_assets: list[str] = []
+        self.missing_files: list[tuple[str, str]] = []
 
     def build(
         self,
@@ -37,6 +38,7 @@ class SiteBuilder:
         journal_pages = list(self._reader.find_journals()) if config.enable_journals else []
 
         self.broken_links = []
+        self.missing_files = []
         assets: list[str] = []
         self._convert_pages(pages, pages, config, source_dir, assets, on_progress)
         # Journals may link to regular pages, so they resolve against both sets.
@@ -56,7 +58,13 @@ class SiteBuilder:
     ) -> None:
         if not pages:
             return
-        resolver = LinkResolver(link_targets, config.home_slug, root=source_dir)
+        resolver = LinkResolver(
+            link_targets,
+            config.home_slug,
+            root=source_dir,
+            static_dirs=[source_dir / d for d in config.external_static_dirs],
+            html_links=config.external_deps,
+        )
         # Each page's pandoc conversion is an independent subprocess call, so
         # threads give a near-linear speedup (the GIL is released while waiting
         # on the subprocess). Results are applied on the main thread, in
@@ -69,6 +77,7 @@ class SiteBuilder:
                 if on_progress:
                     on_progress(page.title)
         self.broken_links.extend(resolver.broken_links)
+        self.missing_files.extend(resolver.missing_files)
 
     def _convert_page(self, page: Page, resolver: LinkResolver, config: SiteConfig) -> str:
         preprocessed, page.asset_filenames = resolver.preprocess(page.raw_content, page.format, page.title, page)
@@ -101,9 +110,10 @@ class SiteBuilder:
 
         writer.copy_assets(self.used_assets, source_dir)
 
-        writer.copy_pages_subdirs(source_dir / config.pages_directory)
-        for external_dir in config.external_static_dirs:
-            writer.copy_pages_subdirs(Path(external_dir), require_web_files=False)
+        if config.external_deps:
+            writer.copy_pages_subdirs(source_dir / config.pages_directory)
+            for external_dir in config.external_static_dirs:
+                writer.copy_pages_subdirs(source_dir / external_dir, require_web_files=False)
 
         writer.write_sitemap(pages, journal_pages, config)
         writer.write_robots(config)

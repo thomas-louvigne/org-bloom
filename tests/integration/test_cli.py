@@ -130,3 +130,104 @@ def test_tags_dates_and_blog(org_project, tmp_path):
     blog = (out / "blog.html").read_text(encoding="utf-8")
     assert "Lancement" in blog and "12 octobre 2026" in blog and "blog-list__author" in blog
     assert "<dc:creator>Thomas</dc:creator>" in (out / "feed.xml").read_text(encoding="utf-8")
+
+
+@pytest.fixture
+def dual_project(org_project):
+    """A folder edited with both Logseq and Orgamnesia: logseq/config.edn, and
+    a page in a subfolder that only the org-mode reading picks up."""
+    (org_project / "logseq").mkdir()
+    (org_project / "logseq" / "config.edn").write_text(
+        '{:default-home {:page "Élody"} :publishing/all-pages-public? true}', encoding="utf-8"
+    )
+    (org_project / "pages" / "lore").mkdir()
+    (org_project / "pages" / "lore" / "Carte.org").write_text("* Carte\nUne carte.\n", encoding="utf-8")
+    return org_project
+
+
+def test_logseq_folder_means_logseq_by_default(dual_project, tmp_path):
+    out = tmp_path / "site"
+    result = _run(dual_project, out, "--no-init-toml")
+    assert result.exit_code == 0, result.output
+    assert "Source: Logseq graph" in result.output
+    assert "Une page." in (out / "index.html").read_text(encoding="utf-8")  # home from config.edn
+    assert not (out / "carte.html").exists()  # Logseq reads pages/ only, not subfolders
+
+
+@pytest.mark.parametrize("source", ["org", "orgamnesia"])
+def test_source_option_reads_a_logseq_folder_as_org(dual_project, tmp_path, source):
+    out = tmp_path / "site"
+    result = _run(dual_project, out, "--no-init-toml", "--source", source)
+    assert result.exit_code == 0, result.output
+    assert "Source: org-mode project" in result.output
+    assert "<h2>Une section</h2>" in (out / "index.html").read_text(encoding="utf-8")  # config.edn home ignored
+    assert (out / "carte.html").exists()
+
+
+def test_source_from_toml_and_cli_overrides_it(dual_project, tmp_path):
+    (dual_project / "org-bloom.toml").write_text('[site]\nsource = "org"\n', encoding="utf-8")
+    out = tmp_path / "site"
+    assert _run(dual_project, out).exit_code == 0
+    assert (out / "carte.html").exists()
+
+    result = _run(dual_project, out, "--source", "logseq")
+    assert result.exit_code == 0, result.output
+    assert not (out / "carte.html").exists()
+
+
+def test_unknown_source_in_toml_falls_back_to_auto(dual_project, tmp_path):
+    (dual_project / "org-bloom.toml").write_text('[site]\nsource = "obsidian"\n', encoding="utf-8")
+    result = _run(dual_project, tmp_path / "site")
+    assert result.exit_code == 0, result.output
+    assert "ignoring source 'obsidian'" in result.output
+    assert "Source: Logseq graph" in result.output
+
+
+@pytest.fixture
+def project_with_web_folder(org_project):
+    """A hand-made 3D map in pages/plan/, linked from the home page."""
+    plan = org_project / "pages" / "plan"
+    plan.mkdir()
+    (plan / "index.html").write_text("<p>plan 3D</p>", encoding="utf-8")
+    (plan / "style.css").write_text("p {}", encoding="utf-8")
+    with (org_project / "pages" / "Accueil.org").open("a", encoding="utf-8") as f:
+        f.write("[[file:plan/index.html][Voir le plan]]\n")
+    return org_project
+
+
+def test_web_folder_copied_and_linked(project_with_web_folder, tmp_path):
+    out = tmp_path / "site"
+    result = _run(project_with_web_folder, out, "--no-init-toml")
+    assert result.exit_code == 0, result.output
+    assert (out / "plan" / "index.html").exists()
+    assert 'href="plan/index.html"' in (out / "index.html").read_text(encoding="utf-8")
+
+
+def test_no_external_deps_leaves_web_folder_out(project_with_web_folder, tmp_path):
+    out = tmp_path / "site"
+    result = _run(project_with_web_folder, out, "--no-init-toml", "--no-external-deps")
+    assert result.exit_code == 0, result.output
+    assert not (out / "plan").exists()
+    assert 'href="404.html"' in (out / "index.html").read_text(encoding="utf-8")
+    assert "left out by --no-external-deps" in result.output
+
+
+def test_missing_web_folder_links_to_404(project_with_web_folder, tmp_path):
+    import shutil
+    shutil.rmtree(project_with_web_folder / "pages" / "plan")
+    out = tmp_path / "site"
+    result = _run(project_with_web_folder, out, "--no-init-toml")
+    assert result.exit_code == 0, result.output
+    assert 'href="404.html"' in (out / "index.html").read_text(encoding="utf-8")
+    assert "plan/index.html  (from Accueil)" in result.output
+
+
+def test_html_attachment_in_assets_is_not_an_external_dep(org_project, tmp_path):
+    (org_project / "assets" / "lettre.html").write_text("<p>lettre</p>", encoding="utf-8")
+    (org_project / "pages" / "Quête.org").write_text("* Quête\n[[../assets/lettre.html][La lettre]]\n", encoding="utf-8")
+    out = tmp_path / "site"
+    result = _run(org_project, out, "--no-init-toml", "--no-external-deps")
+    assert result.exit_code == 0, result.output
+    assert (out / "assets" / "lettre.html").exists()
+    assert 'href="assets/lettre.html"' in (out / "quete.html").read_text(encoding="utf-8")
+    assert "lettre.html" not in result.output

@@ -1,4 +1,4 @@
-org-bloom looks for a =logseq/= folder at the root of the project.
+org-bloom looks for a =logseq/= folder at the root of the project — unless =source= says otherwise (see [[#both][Edited with both Logseq and Orgamnesia]]).
 
 | | Logseq graph (has =logseq/=) | Org-mode project (Emacs, org-roam, Orgamnesia) |
 |-+------------------------------+------------------------------------------------|
@@ -26,3 +26,31 @@ In an org-mode project, subfolders are read, except:
 - the output folder, when it sits inside the project.
 
 To leave out more folders or files, see [[Publishing-and-privacy][Publishing and privacy]].
+
+* Edited with both Logseq and Orgamnesia
+:PROPERTIES:
+:CUSTOM_ID: both
+:END:
+
+A folder can stay a Logseq graph (it keeps its =logseq/= folder) while being edited in Orgamnesia too. Choose how org-bloom reads it with =source=, in the =[site]= table of =org-bloom.toml=, or with =--source= on the command line, which wins:
+
+| =source=                 | Reads                                                                                   |
+|--------------------------+-----------------------------------------------------------------------------------------|
+| =auto= (default)         | a Logseq graph if =logseq/= exists, an org-mode project otherwise                        |
+| =logseq=                 | =pages/= only, =.org= and =.md=; =logseq/config.edn= fills the settings the TOML leaves out |
+| =org= (or =orgamnesia=)  | like any org-mode project — subfolders included; =logseq/config.edn= is ignored          |
+
+Orgamnesia's Export button runs =org-bloom build <project>= without options, so set =source = "org"= in the TOML and build the Logseq way by hand when needed:
+
+#+BEGIN_SRC toml
+[site]
+output_dir = "../my-site"
+source     = "org"
+#+END_SRC
+
+#+BEGIN_SRC bash
+org-bloom build ~/notes                  # Orgamnesia reading (the Export button)
+org-bloom build ~/notes --source logseq  # Logseq reading
+#+END_SRC
+
+The line =Source: …= printed at the start of every build tells which reading was used. Settings that differ between the two (=org_listify_headings_from=, =all_public=, =journal_page_title_format=) take the defaults of the reading in use unless the TOML sets them.

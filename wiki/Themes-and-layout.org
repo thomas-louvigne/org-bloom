@@ -34,4 +34,23 @@ Full-text search runs in the browser (Fuse.js): no server needed.
 * Custom pages and external sites
 
 - *Custom HTML/CSS pages* are copied as-is (embeds, mini-apps, slide decks…).
-- *External static sites* — mini-sites that live outside the project — are copied in with =[[external_static_dirs]]=.
+- *External static sites* — mini-sites that live outside the project — are copied in with =[[external_static_dirs]]= (a relative =path= is read from the project).
+
+Link them like any file: =[[file:plan/index.html][Voir le plan]]=.
+
+** Building without them
+
+A mini-site may live on one computer only (a heavy 3D map, a folder that is not synced…). When a linked HTML page is not found, the link leads to the site's =404.html= instead, and the build lists it:
+
+#+BEGIN_EXAMPLE
+Warning: 1 linked HTML page(s) not found, linked to 404.html instead:
+  plan/index.html  (from Lugny, 4Serpents)
+#+END_EXAMPLE
+
+=--no-external-deps= does it on purpose, even where the folders exist: neither the =[[external_static_dirs]]= nor the =pages/= subfolders holding HTML are copied, and every link to them leads to =404.html=. HTML files in =assets/= are attachments and stay.
+
+#+BEGIN_SRC bash
+org-bloom build ~/notes --no-external-deps
+#+END_SRC
+
+⚠️ A site built this way lacks those pages: do not publish it over the full one.

@@ -21,6 +21,13 @@ lang        = "en"   # HTML lang attribute — used in <html lang="..."> and SEO
 # Relative to the project. ⚠️ Wiped on every build.
 # output_dir = "../my-site"
 
+# How to read the project. "auto" (default): a Logseq graph when a logseq/
+# folder exists, an org-mode project otherwise. Force it for a folder edited
+# with both Logseq and Orgamnesia: "logseq" (pages/ only, logseq/config.edn
+# read) or "org" (Orgamnesia, Emacs: subfolders read, config.edn ignored).
+# `--source` on the command line overrides it.
+# source = "auto"
+
 # Home page slug. Auto-read from config.edn :default-home if absent.
 home_page = "home"
 
@@ -75,6 +82,11 @@ journals_directory = "journals"
 #
 # [[external_static_dirs]]
 # path = "/home/you/repo/another-project"
+#
+# A relative path is read from the project. On a computer that lacks one of
+# these folders (or a pages/ subfolder), links to its HTML pages lead to
+# 404.html, with a warning. `org-bloom --no-external-deps` leaves all of them
+# out on purpose.
 
 # ── Template ───────────────────────────────────────────────────────────────────
 

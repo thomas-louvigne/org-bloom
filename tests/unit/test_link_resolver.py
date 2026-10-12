@@ -218,14 +218,14 @@ class TestOrgLinks:
         return Page(title=title or name, slug=slugify(title or name), raw_content=content,
                     source_path=root / f"{name}.org", format="org", is_public=True)
 
-    def _resolver(self, root):
+    def _resolver(self, root, **options):
         projets = self._page(
             root, "projets",
             ":PROPERTIES:\n:ID: file-id\n:END:\n* Rust\n:PROPERTIES:\n:ID: rust-id\n:CUSTOM_ID: rouille\n:END:\n",
             title="Projets",
         )
         here = self._page(root, "ici", "* Écrire la doc\n** Liens\n:PROPERTIES:\n:CUSTOM_ID: perso\n:END:\n")
-        return LinkResolver([projets, here], home_slug="index", root=root), here
+        return LinkResolver([projets, here], home_slug="index", root=root, **options), here
 
     def test_file_link_to_page(self, project):
         resolver, here = self._resolver(project)
@@ -270,10 +270,34 @@ class TestOrgLinks:
         assert assets == ["assets/photo.png"]
 
     def test_html_file_link_kept(self, project):
+        (project / "demo").mkdir()
+        (project / "demo" / "index.html").write_text("<p>démo</p>", encoding="utf-8")
         resolver, here = self._resolver(project)
         result, assets = resolver.preprocess("[[file:demo/index.html][démo]]", "org", page=here)
         assert "[[file:demo/index.html][démo]]" in result
         assert assets == []
+        assert resolver.missing_files == []
+
+    def test_html_page_in_an_external_static_dir_kept(self, project, tmp_path_factory):
+        outside = tmp_path_factory.mktemp("statics")
+        (outside / "plan").mkdir()
+        (outside / "plan" / "index.html").write_text("<p>plan</p>", encoding="utf-8")
+        resolver, here = self._resolver(project, static_dirs=[outside])
+        result, _ = resolver.preprocess("[[file:plan/index.html][le plan]]", "org", page=here)
+        assert "[[file:plan/index.html][le plan]]" in result
+
+    def test_missing_html_page_leads_to_404(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[file:plan/index.html][le plan]]", "org", page=here)
+        assert "[[file:404.html][le plan]]" in result
+        assert resolver.missing_files == [("", "plan/index.html")]
+
+    def test_html_links_off_lead_to_404_even_when_present(self, project):
+        (project / "demo").mkdir()
+        (project / "demo" / "index.html").write_text("<p>démo</p>", encoding="utf-8")
+        resolver, here = self._resolver(project, html_links=False)
+        result, _ = resolver.preprocess("[[file:demo/index.html][démo]]", "org", page=here)
+        assert "[[file:404.html][démo]]" in result
 
     def test_mailto_left_to_the_browser(self, resolver):
         result, _ = resolver.preprocess_org("[[mailto:a@b.c][écrire]]")

@@ -3,15 +3,49 @@
 - Python 3.11+
 - [[https://pandoc.org/installing.html][pandoc]]
 
-* Install
+* Install as a command (recommended)
+
+The easiest way to get an =org-bloom= command available everywhere, without activating anything, is [[https://pipx.pypa.io/][pipx]]: it installs org-bloom in its own virtual environment and puts the executable on your =PATH=.
+
+#+BEGIN_SRC bash
+sudo apt install pipx        # Debian/Ubuntu — or: brew install pipx, or: python3 -m pip install --user pipx
+pipx ensurepath              # adds ~/.local/bin to PATH (open a new terminal afterwards)
+
+git clone https://github.com/thomas-louvigne/org-bloom.git
+pipx install -e ./org-bloom  # -e: changes to the sources apply without reinstalling
+org-bloom --help
+#+END_SRC
+
+Update with =git pull= (the =-e= install follows the sources); run =pipx reinstall org-bloom= only if =pyproject.toml= changed. Uninstall with =pipx uninstall org-bloom=.
+
+** Why not =pip install --user=?
+
+On recent Debian, Ubuntu and Fedora, =pip install --user= fails with =error: externally-managed-environment= ([[https://peps.python.org/pep-0668/][PEP 668]]): the system Python refuses packages that apt does not manage. Use pipx, or the virtual environment below — not =--break-system-packages=.
+
+** Without pipx: venv + symlink
+
+#+BEGIN_SRC bash
+git clone https://github.com/thomas-louvigne/org-bloom.git
+cd org-bloom
+python3 -m venv .venv
+.venv/bin/pip install -e .
+mkdir -p ~/.local/bin
+ln -sf "$PWD/.venv/bin/org-bloom" ~/.local/bin/org-bloom
+#+END_SRC
+
+=~/.local/bin= must be on your =PATH= (it is by default on most Linux distributions; otherwise add =export PATH="$HOME/.local/bin:$PATH"= to your =~/.bashrc= or =~/.zshrc=).
+
+* Install for development
 
 #+BEGIN_SRC bash
 git clone https://github.com/thomas-louvigne/org-bloom.git
 cd org-bloom
 python -m venv .venv
 source .venv/bin/activate   # .venv\Scripts\activate on Windows
-pip install -e .
+pip install -e ".[dev]"
 #+END_SRC
+
+=org-bloom= is then available while the virtual environment is active.
 
 * First build
 

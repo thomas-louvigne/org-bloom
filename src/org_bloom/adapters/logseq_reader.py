@@ -137,13 +137,13 @@ class LogseqReader(PageRepository):
     ) -> None:
         """`logseq=False` reads a plain org-mode project (Emacs, Orgamnesia):
         `.org` files only, in subfolders too, without the title headline a page
-        may start with. `excluded` folders (e.g. the output) are never read."""
+        may start with, and logseq/config.edn is ignored. `excluded` folders (e.g. the output) are never read."""
         self._input_dir = input_dir
         self._logseq = logseq
         self._suffixes = (".org", ".md") if logseq else (".org",)
         self._excluded = [p.resolve() for p in (excluded or [])]
 
-        edn = load_edn_config(input_dir).get("site", {})
+        edn = load_edn_config(input_dir).get("site", {}) if logseq else {}
         self._all_public = all_public if all_public is not None else edn.get("all_public", False)
         self._default_home_slug: str | None = slugify(edn["home_page"]) if "home_page" in edn else None
 

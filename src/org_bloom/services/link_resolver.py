@@ -108,7 +108,14 @@ _SYNTAXES: dict[PageFormat, _Syntax] = {
 
 
 class LinkResolver:
-    def __init__(self, pages: list[Page], home_slug: str, root: Path | None = None) -> None:
+    def __init__(
+        self,
+        pages: list[Page],
+        home_slug: str,
+        root: Path | None = None,
+        static_dirs: list[Path] | None = None,
+        html_links: bool = True,
+    ) -> None:
         self._slug_map = self._build_slug_map(pages)
         self._known_slugs = frozenset(page.slug for page in pages)
         self._home_slug = home_slug
@@ -122,8 +129,14 @@ class LinkResolver:
                 ids, _ = property_anchors(page.raw_content)
                 for org_id, anchor in ids.items():
                     self._ids.setdefault(org_id, (page, anchor))
+        # Folders copied to the site root as they are (external_static_dirs).
+        self._static_dirs = static_dirs or []
+        # False: every link to a hand-made HTML page leads to 404.html.
+        self._html_links = html_links
         # (source_page_title, target) pairs for links that resolve to no known page.
         self.broken_links: list[tuple[str, str]] = []
+        # (source_page_title, target) pairs for HTML pages sent to 404.html.
+        self.missing_files: list[tuple[str, str]] = []
 
     def _build_slug_map(self, pages: list[Page]) -> dict[str, str]:
         slug_map: dict[str, str] = {}
@@ -160,6 +173,14 @@ class LinkResolver:
             if candidate.is_file() and candidate.is_relative_to(self._root):
                 return candidate.relative_to(self._root).as_posix()
         return f"assets/{Path(target).name}"
+
+    def _html_page_exists(self, path: str, page: Page | None) -> bool:
+        """Whether a linked HTML page will be in the site: next to the linking
+        page (pages/ subfolder) or in an external static folder."""
+        if self._root is None or page is None:
+            return True  # nowhere to look: trust the link
+        candidates = [page.source_path.parent / path, *(d / path for d in self._static_dirs)]
+        return any(c.is_file() for c in candidates)
 
     def _org_anchor(self, page: Page | None, search: str) -> str:
         """Anchor for an org search option: `*Headline` or `#custom-id`."""
@@ -215,8 +236,12 @@ class LinkResolver:
             if not target.startswith("file:"):
                 return None
             path, _, search = target[len("file:"):].partition("::")
-            if Path(path).suffix.lower() in (".html", ".htm"):
+            if Path(path).suffix.lower() in (".html", ".htm") and Path(path).parts[:1] != ("assets",):
                 # A custom HTML page next to the notes, copied as is (see copy_pages_subdirs).
+                # An HTML file in assets/ is an attachment, already listed for copy.
+                if not self._html_links or not self._html_page_exists(path, page):
+                    self.missing_files.append((source, path))
+                    return syntax.link(syntax.page_href_prefix + "404.html", label or path)
                 return syntax.link(target, label or path)
             if Path(path).suffix.lower() not in (".org", ".md"):
                 return asset(self._linked_file(path, page), label)

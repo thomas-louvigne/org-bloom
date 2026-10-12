@@ -9,4 +9,4 @@ org-bloom is the new name of =logseq-site-builder=. What changed:
 
 Your existing =logseq-site-builder.toml= keeps working: it is read whenever no =org-bloom.toml= sits next to it. Rename it to =org-bloom.toml= when convenient.
 
-To swap the old command for the new one, run =pip uninstall logseq-site-builder= then =pip install -e .= from the repository.
+To swap the old command for the new one, run =pip uninstall logseq-site-builder= then reinstall from the repository as described in [[Installation][Installation]] (=pipx install -e .=).

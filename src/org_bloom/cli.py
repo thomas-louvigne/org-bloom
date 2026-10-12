@@ -6,12 +6,12 @@ from pathlib import Path
 
 import click
 
-from .adapters.edn_config_loader import generate_toml, is_logseq_project
+from .adapters.edn_config_loader import PROJECT_SOURCES, generate_toml, resolve_source
 from .adapters.logseq_reader import LogseqReader
 from .adapters.pandoc_converter import PandocConverter
 from .adapters.static_writer import StaticWriter
 from .adapters.themes import builtin_theme_names, resolve_theme_css
-from .adapters.toml_config_loader import CONFIG_FILENAME, config_path, load_toml_config
+from .adapters.toml_config_loader import CONFIG_FILENAME, config_path, load_toml_config, read_toml_file
 from .domain.page import SiteConfig
 from .services.site_builder import SiteBuilder
 from .services.site_config import build_site_config, resolve_home_slug
@@ -41,6 +41,13 @@ def _warn(message: str) -> None:
     help=f"Do not generate {CONFIG_FILENAME} when it does not exist.",
 )
 @click.option(
+    "--source",
+    type=click.Choice([*PROJECT_SOURCES, "orgamnesia"], case_sensitive=False),
+    default=None,
+    help="How to read the project: logseq (pages/ + logseq/config.edn) or org "
+    "(Orgamnesia, Emacs; config.edn ignored). Default: source in org-bloom.toml, else auto.",
+)
+@click.option(
     "--theme",
     default=None,
     help='Theme name (e.g. "dark") or path to a CSS file (relative to the Logseq dir).',
@@ -58,6 +65,13 @@ def _warn(message: str) -> None:
     help="List files in the Logseq assets/ directory that no page references.",
 )
 @click.option(
+    "--no-external-deps",
+    is_flag=True,
+    default=False,
+    help="Build without the hand-made web folders (external_static_dirs, pages/ subfolders "
+    "holding HTML); links to them lead to 404.html.",
+)
+@click.option(
     "--zip",
     "zip_output",
     is_flag=True,
@@ -72,9 +86,11 @@ def main(
     all_public: bool,
     social_links: tuple[str, ...],
     no_init_toml: bool,
+    source: str | None,
     theme: str | None,
     check_links: bool,
     check_assets: bool,
+    no_external_deps: bool,
     zip_output: bool,
 ) -> None:
     """Build a static website from org-mode notes (Logseq, Orgamnesia, Emacs org files).
@@ -82,16 +98,19 @@ def main(
     OUTPUT_DIR is wiped on every build; without it, output_dir from the [site]
     table of org-bloom.toml is used (relative to INPUT_DIR).
     """
-    logseq = is_logseq_project(input_dir)
+    logseq, source_warning = resolve_source(input_dir, source or read_toml_file(input_dir).get("site", {}).get("source"))
+    if source_warning:
+        _warn(source_warning)
     toml_path = config_path(input_dir)
     if not toml_path.exists() and not no_init_toml:
-        generated = generate_toml(input_dir)
-        source = " from logseq/config.edn" if logseq else ""
-        click.echo(f"Created {generated}{source} — edit it to customise your site.")
+        generated = generate_toml(input_dir, logseq=logseq)
+        origin = " from logseq/config.edn" if logseq and (input_dir / "logseq").is_dir() else ""
+        click.echo(f"Created {generated}{origin} — edit it to customise your site.")
 
-    toml = load_toml_config(input_dir)
+    toml = load_toml_config(input_dir, logseq=logseq)
     if toml_path.exists():
         click.echo(f"Loaded config from {toml_path}")
+    click.echo("  Source: Logseq graph" if logseq else "  Source: org-mode project (Orgamnesia, Emacs)")
     site_section = toml.get("site", {})
     output_dir = _resolve_output_dir(output_dir, site_section.get("output_dir"), input_dir, toml_path)
 
@@ -127,7 +146,7 @@ def main(
     home_slug, home_warning = resolve_home_slug(home_page or site_section.get("home_page"), public_pages)
     if home_warning:
         _warn(home_warning)
-    config = dataclasses.replace(config, home_slug=home_slug)
+    config = dataclasses.replace(config, home_slug=home_slug, external_deps=not no_external_deps)
 
     theme_css = _resolve_theme(theme or site_section.get("theme"), input_dir)
 
@@ -140,7 +159,7 @@ def main(
     click.echo(f"Building site from {input_dir} → {output_dir}")
     click.echo(f"  {len(public_pages)} public page(s) found")
     journal_count = sum(1 for _ in reader.find_journals()) if config.enable_journals else 0
-    _echo_build_summary(config, journal_count)
+    _echo_build_summary(config, journal_count, input_dir)
 
     total_pages = len(public_pages) + journal_count
     try:
@@ -151,6 +170,7 @@ def main(
         sys.exit(1)
 
     click.echo(f"Done. Site written to {output_dir}")
+    _report_missing_files(builder.missing_files, config.external_deps)
     if config.enable_journals and config.rss:
         click.echo(f"  RSS feed: {output_dir / 'feed.xml'}")
 
@@ -213,15 +233,17 @@ def _resolve_theme(theme: str | None, input_dir: Path) -> Path | None:
     return theme_css
 
 
-def _echo_build_summary(config: SiteConfig, journal_count: int) -> None:
+def _echo_build_summary(config: SiteConfig, journal_count: int, input_dir: Path) -> None:
     if config.enable_journals:
         click.echo(f"  {journal_count} journal entry(ies) found")
     if config.hidden:
         click.echo(f"  {len(config.hidden)} hidden path(s): {config.hidden}")
-    if config.external_static_dirs:
+    if not config.external_deps:
+        click.echo("  External web folders left out (--no-external-deps)")
+    elif config.external_static_dirs:
         click.echo(f"  {len(config.external_static_dirs)} external static dir(s) configured")
         for external_dir in config.external_static_dirs:
-            if not Path(external_dir).is_dir():
+            if not (input_dir / external_dir).is_dir():
                 _warn(f"external_static_dirs path not found: {external_dir}")
 
 
@@ -231,6 +253,19 @@ def _notify_desktop(message: str) -> None:
             ["notify-send", "--icon=dialog-information", "org-bloom", message],
             check=False,
         )
+
+
+def _report_missing_files(missing_files: list[tuple[str, str]], external_deps: bool) -> None:
+    """HTML pages linked but left out of the site: their links lead to 404.html."""
+    if not missing_files:
+        return
+    by_target: dict[str, list[str]] = {}
+    for source, target in missing_files:
+        by_target.setdefault(target, []).append(source)
+    reason = "not found" if external_deps else "left out by --no-external-deps"
+    _warn(f"{len(by_target)} linked HTML page(s) {reason}, linked to 404.html instead:")
+    for target, sources in sorted(by_target.items()):
+        click.echo(f"  {target}  (from {', '.join(dict.fromkeys(sources))})", err=True)
 
 
 def _report_broken_links(broken_links: list[tuple[str, str]]) -> None:

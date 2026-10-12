@@ -80,5 +80,8 @@ class SiteConfig:
     lang: str = "en"
     tree_view: bool = True
     external_static_dirs: list[str] = field(default_factory=list)
+    # False: build without the hand-made web folders (external_static_dirs and
+    # pages/ subfolders holding HTML); links to them lead to 404.html.
+    external_deps: bool = True
     share: dict[str, bool] = field(default_factory=lambda: dict.fromkeys(SHARE_BUTTONS, True))
     share_layout: ShareLayout = "horizontal"

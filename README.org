@@ -30,18 +30,19 @@ Requires Python 3.11+ and [[https://pandoc.org/installing.html][pandoc]].
 #+BEGIN_SRC bash
 git clone https://github.com/thomas-louvigne/org-bloom.git
 cd org-bloom
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
+pipx install -e .      # installs the org-bloom command on your PATH
 #+END_SRC
 
-*Try it on a sample graph* shipped with the repository — an org-roam garden with ID links, a private note and two dailies:
+No pipx? =sudo apt install pipx= (or =brew install pipx=), then =pipx ensurepath=. =pip install --user= fails on recent Linux distributions (=externally-managed-environment=) — see [[https://github.com/thomas-louvigne/org-bloom/wiki/Installation][Installation]] for the alternatives and the development setup.
+
+*Try it on a sample Logseq graph* shipped with the repository — Org and Markdown pages, journals turned into a blog, a private draft left out:
 
 #+BEGIN_SRC bash
-org-bloom test-sites/04-org-roam-jardin /tmp/bloom-demo
+org-bloom test-sites/01-carnet-tech-default /tmp/bloom-demo
 python3 -m http.server --directory /tmp/bloom-demo 8080   # → http://localhost:8080
 #+END_SRC
 
-=test-sites/= also holds three Logseq graphs, one per theme.
+=test-sites/= also holds two more Logseq graphs (=dark= and =nord= themes) and an org-roam garden (=04-org-roam-jardin=).
 
 *Then on your own notes* — two org files are enough:
 

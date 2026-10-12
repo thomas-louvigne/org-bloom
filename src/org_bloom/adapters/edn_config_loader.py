@@ -16,10 +16,32 @@ _EDN_STRINGS = {
 }
 
 
+# Values of `[site] source` / `--source`: how to read the project.
+PROJECT_SOURCES = ("auto", "logseq", "org")
+_SOURCE_ALIASES = {"orgamnesia": "org", "org-roam": "org", "emacs": "org"}
+
+
 def is_logseq_project(source_dir: Path) -> bool:
     """A Logseq graph has a logseq/ folder; anything else is a plain org-mode
     project (Emacs, Orgamnesia)."""
     return (source_dir / "logseq").is_dir()
+
+
+def resolve_source(source_dir: Path, requested: object) -> tuple[bool, str | None]:
+    """Return (logseq, warning). `requested` forces the reading mode, so a
+    folder edited with both Logseq and Orgamnesia can be built either way;
+    "auto" (or nothing) looks for a logseq/ folder."""
+    value = str(requested or "auto").strip().lower()
+    value = _SOURCE_ALIASES.get(value, value)
+    if value == "logseq":
+        return True, None
+    if value == "org":
+        return False, None
+    warning = None
+    if value != "auto":
+        expected = ", ".join(f"'{s}'" for s in PROJECT_SOURCES)
+        warning = f"ignoring source '{requested}' (expected {expected}, or 'orgamnesia')"
+    return is_logseq_project(source_dir), warning
 
 
 def _strip_comments(text: str) -> str:
@@ -56,15 +78,16 @@ def load_edn_config(source_dir: Path) -> dict:
     return {"site": site} if site else {}
 
 
-def generate_toml(source_dir: Path) -> Path:
+def generate_toml(source_dir: Path, logseq: bool | None = None) -> Path:
     """Write org-bloom.toml bootstrapped from config.edn values.
 
     Only writes keys that were actually found in config.edn; everything else
     is left as commented-out examples so the file stays minimal and readable.
     Returns the path of the written file.
     """
-    site = load_edn_config(source_dir).get("site", {})
-    logseq = is_logseq_project(source_dir)
+    if logseq is None:
+        logseq = is_logseq_project(source_dir)
+    site = load_edn_config(source_dir).get("site", {}) if logseq else {}
 
     def val(key: str, default: str, comment: str = "") -> str:
         if key not in site:
@@ -97,6 +120,7 @@ def generate_toml(source_dir: Path) -> Path:
         '# base_url    = "https://example.com"  # required for sitemap, canonical URLs and RSS',
         '# lang        = "en"                   # HTML lang attribute (e.g. "fr", "de")',
         '# output_dir  = "../my-site"           # used when no output folder is given (wiped on every build)',
+        '# source      = "auto"                 # "logseq" (pages/ + logseq/config.edn) or "org" (Orgamnesia, Emacs); auto: logseq/ folder or not',
         "",
         val("home_page", '"home"', ":default-home"),
         val("all_public", "false" if logseq else "true", ":publishing/all-pages-public?"),
