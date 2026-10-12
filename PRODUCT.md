@@ -12,7 +12,7 @@ Secondary: occasional outside visitors who land on a specific note — a colleag
 
 ## Product Purpose
 
-logseq-site-builder converts a Logseq knowledge base into a static website (HTML + CSS + vanilla JS). It exists so that Logseq users can share their notes publicly without a backend, without a CMS, and without abandoning their existing note-taking workflow. Success looks like: the user runs one CLI command and gets a fast, readable site that feels like a natural extension of their Logseq graph — not like a generic blog or a corporate wiki.
+org-bloom is the org-mode static website-builder: it converts an org-mode knowledge base — Logseq graph, Orgamnesia project or plain Emacs org files — into a static website (HTML + CSS + vanilla JS). It was previously called logseq-site-builder. It exists so that Logseq users can share their notes publicly without a backend, without a CMS, and without abandoning their existing note-taking workflow. Success looks like: the user runs one CLI command and gets a fast, readable site that feels like a natural extension of their Logseq graph — not like a generic blog or a corporate wiki.
 
 Two surfaces, one product:
 

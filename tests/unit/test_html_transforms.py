@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-from logseq_builder.services.html_transforms import add_collapsible_tree, auto_listify, sections_to_lists
+from org_bloom.services.html_transforms import add_collapsible_tree, auto_listify, sections_to_lists
 
 
 class TestSectionsToLists:
@@ -193,3 +193,30 @@ class TestAddCollapsibleTree:
         details = parent_li.find("details", recursive=False)
         assert details is not None
         assert details.find("li", id="d") is not None
+
+
+class TestFormatTimestamps:
+    def test_active_and_inactive(self):
+        from org_bloom.services.html_transforms import format_timestamps
+        html = "<p>Le &lt;2026-10-12 Mon&gt; et [2026-10-11 Sun 9:30].</p>"
+        assert format_timestamps(html, "fr") == (
+            '<p>Le <time class="timestamp" datetime="2026-10-12">12 octobre 2026</time> et '
+            '<time class="timestamp timestamp--inactive" datetime="2026-10-11T09:30">11 octobre 2026 à 9:30</time>.</p>'
+        )
+
+    def test_time_range_repeater_and_line_wrap(self):
+        from org_bloom.services.html_transforms import format_timestamps
+        html = "<p>&lt;2026-10-12\nMon 10:00-11:30 +1w&gt;</p>"
+        assert ">October 12, 2026, 10:00–11:30</time>" in format_timestamps(html, "en")
+
+    def test_code_and_mismatched_brackets_left_alone(self):
+        from org_bloom.services.html_transforms import format_timestamps
+        html = "<p><code>&lt;2026-10-12 Mon&gt;</code> &lt;2026-10-12 Mon]</p>"
+        assert format_timestamps(html, "fr") == html
+
+
+class TestLinkHeadlineTags:
+    def test_pandoc_tags_become_links(self):
+        from org_bloom.services.html_transforms import link_headline_tags
+        html = '<h2>Truc <span class="tag" data-tag-name="Doc"><span class="smallcaps">Doc</span></span></h2>'
+        assert link_headline_tags(html) == '<h2>Truc <a class="tag" href="tag-doc.html">Doc</a></h2>'

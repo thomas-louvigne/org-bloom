@@ -1,5 +1,5 @@
 from pathlib import Path
-from logseq_builder.domain.page import Page, SiteConfig
+from org_bloom.domain.page import Page, SiteConfig
 
 
 class TestPage:

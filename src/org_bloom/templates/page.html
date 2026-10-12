@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page.title }} — {{ config.title }}{% endblock %}
+
+{% block content %}
+<article class="page-article">
+  <header class="page-header">
+    <h1 class="page-title">{% if page.icon %}<span class="page-icon" aria-hidden="true">{{ page.icon }}</span> {% endif %}{{ page.title }}</h1>
+    {#- A journal entry without #+TITLE is already titled by its date. #}
+    {%- set _show_date = page.date and page.title != page.date_label %}
+    {%- if _show_date or page.author %}
+    <p class="page-meta">
+      {%- if _show_date %}<time datetime="{{ page.date.isoformat() }}">{{ page.date_label or page.date | human_date(config.lang) }}</time>{% endif %}
+      {%- if _show_date and page.author %}<span class="page-meta__sep" aria-hidden="true"> · </span>{% endif %}
+      {%- if page.author %}<span class="page-meta__author">{{ page.author }}</span>{% endif -%}
+    </p>
+    {%- endif %}
+    {%- if page.tags %}
+    <ul class="page-tags">
+      {%- for tag in page.tags %}<li><a class="tag" href="{{ tag | tag_href }}">{{ tag }}</a></li>{% endfor -%}
+    </ul>
+    {%- endif %}
+    {% include 'partials/share.html' %}
+  </header>
+  <div class="page-body">
+    {{ page.html_content | safe }}
+  </div>
+</article>
+{% endblock %}

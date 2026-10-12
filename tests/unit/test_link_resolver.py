@@ -1,9 +1,9 @@
 from pathlib import Path
 import pytest
 
-from logseq_builder.domain.page import Page
-from logseq_builder.domain.paths import slugify
-from logseq_builder.services.link_resolver import LinkResolver
+from org_bloom.domain.page import Page
+from org_bloom.domain.paths import slugify
+from org_bloom.services.link_resolver import LinkResolver
 
 
 def _make_page(title: str, slug: str | None = None) -> Page:
@@ -71,7 +71,7 @@ class TestLinkResolverOrg:
     def test_asset_link_extracted(self, resolver):
         content = "Image: [[../assets/dragon.png]]"
         result, assets = resolver.preprocess_org(content)
-        assert "dragon.png" in assets
+        assert "assets/dragon.png" in assets
         assert "[[file:assets/dragon.png]]" in result
 
     def test_properties_block_stripped(self, resolver):
@@ -101,8 +101,8 @@ class TestLinkResolverOrg:
     def test_multiple_assets_collected(self, resolver):
         content = "[[../assets/a.jpg]] and [[../assets/b.png]]"
         _, assets = resolver.preprocess_org(content)
-        assert "a.jpg" in assets
-        assert "b.png" in assets
+        assert "assets/a.jpg" in assets
+        assert "assets/b.png" in assets
 
     def test_hashtag_with_accented_chars(self, resolver):
         content = "* #quêtes"
@@ -193,7 +193,7 @@ class TestLinkResolverMd:
         assert "![dragon.png](assets/dragon.png)" in result
         assert "[Le PDF](assets/doc.pdf)" in result
         assert "[x.zip](assets/x.zip)" in result
-        assert assets == ["dragon.png", "doc.pdf", "x.zip"]
+        assert assets == ["assets/dragon.png", "assets/doc.pdf", "assets/x.zip"]
 
 
 class TestLinkByFilename:
@@ -203,4 +203,79 @@ class TestLinkByFilename:
         resolver = LinkResolver([page], home_slug="index")
         result, _ = resolver.preprocess_org("[[ma-page]] et [[Ma Page]]")
         assert result.count("file:mon-super-titre.html") == 2
+        assert resolver.broken_links == []
+
+
+class TestOrgLinks:
+    @pytest.fixture
+    def project(self, tmp_path):
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "guide.pdf").write_bytes(b"%PDF")
+        (tmp_path / "secret.txt").write_text("x", encoding="utf-8")
+        return tmp_path
+
+    def _page(self, root, name, content, title=None):
+        return Page(title=title or name, slug=slugify(title or name), raw_content=content,
+                    source_path=root / f"{name}.org", format="org", is_public=True)
+
+    def _resolver(self, root):
+        projets = self._page(
+            root, "projets",
+            ":PROPERTIES:\n:ID: file-id\n:END:\n* Rust\n:PROPERTIES:\n:ID: rust-id\n:CUSTOM_ID: rouille\n:END:\n",
+            title="Projets",
+        )
+        here = self._page(root, "ici", "* Écrire la doc\n** Liens\n:PROPERTIES:\n:CUSTOM_ID: perso\n:END:\n")
+        return LinkResolver([projets, here], home_slug="index", root=root), here
+
+    def test_file_link_to_page(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[file:projets.org][mes projets]] [[file:projets.org]]", "org", page=here)
+        assert "[[file:projets.html][mes projets]]" in result
+        assert "[[file:projets.html][Projets]]" in result
+
+    def test_file_link_with_headline_and_custom_id(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[file:projets.org::*Rust][r]] [[file:projets.org::#rouille][c]]", "org", page=here)
+        assert "[[file:projets.html#rust][r]]" in result
+        assert "[[file:projets.html#rust][c]]" in result
+
+    def test_id_links(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[id:file-id][p]] [[id:rust-id]]", "org", page=here)
+        assert "[[file:projets.html][p]]" in result
+        assert "[[file:projets.html#rust][Projets]]" in result
+        assert resolver.broken_links == []
+
+    def test_unknown_id_is_plain_text_and_reported(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("voir [[id:nope][là]]", "org", source="Ici", page=here)
+        assert result == "voir là"
+        assert resolver.broken_links == [("Ici", "id:nope")]
+
+    def test_links_inside_the_page(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[*Écrire la doc]] [[#perso][ici]]", "org", page=here)
+        assert "[[#écrire-la-doc][Écrire la doc]]" in result
+        assert "[[#liens][ici]]" in result
+
+    def test_file_next_to_the_page(self, project):
+        resolver, here = self._resolver(project)
+        result, assets = resolver.preprocess("[[file:docs/guide.pdf][guide]]", "org", page=here)
+        assert "[[file:docs/guide.pdf][guide]]" in result
+        assert assets == ["docs/guide.pdf"]
+
+    def test_missing_file_falls_back_to_assets(self, project):
+        resolver, here = self._resolver(project)
+        _, assets = resolver.preprocess("[[file:../outside/photo.png]]", "org", page=here)
+        assert assets == ["assets/photo.png"]
+
+    def test_html_file_link_kept(self, project):
+        resolver, here = self._resolver(project)
+        result, assets = resolver.preprocess("[[file:demo/index.html][démo]]", "org", page=here)
+        assert "[[file:demo/index.html][démo]]" in result
+        assert assets == []
+
+    def test_mailto_left_to_the_browser(self, resolver):
+        result, _ = resolver.preprocess_org("[[mailto:a@b.c][écrire]]")
+        assert "[[mailto:a@b.c][écrire]]" in result
         assert resolver.broken_links == []

@@ -1,0 +1,709 @@
+/* ── Variables ──────────────────────────────────────────── */
+:root {
+  --color-bg: #111113;
+  --color-surface: #1a1a1e;
+  --color-border: #2e2e32;
+  --color-text: #e2e2e0;
+  --color-text-muted: #7a7a78;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --color-nav-bg: #0d0d0f;
+  --color-nav-text: #d6d3d1;
+  --color-nav-hover: #fafaf9;
+  --color-nav-active: #60a5fa;
+  --nav-width: 224px;
+  --header-height: 48px;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Fira Code", monospace;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 2px 0 rgb(0 0 0 / .2);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / .3);
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 15px; }
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-hover); text-decoration: underline; }
+
+/* ── Site Header ────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: var(--color-nav-bg);
+  border-bottom: 1px solid rgb(255 255 255 / .06);
+}
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 1rem;
+}
+.site-header__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-nav-text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.site-header__title:hover { color: var(--color-nav-hover); text-decoration: none; }
+
+/* ── Hamburger ──────────────────────────────────────────── */
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.menu-toggle__bar {
+  display: block;
+  width: 20px;
+  height: 1.5px;
+  background: var(--color-nav-text);
+  border-radius: 2px;
+  transition: transform .2s, opacity .2s;
+}
+.menu-toggle[aria-expanded="true"] .menu-toggle__bar:nth-child(1) {
+  transform: translateY(5.5px) rotate(45deg);
+}
+.menu-toggle[aria-expanded="true"] .menu-toggle__bar:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle[aria-expanded="true"] .menu-toggle__bar:nth-child(3) {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Nav ─────────────────────────────────────────────────── */
+.site-nav {
+  width: var(--nav-width);
+  flex-shrink: 0;
+  background: var(--color-nav-bg);
+  padding: 1rem 0;
+  overflow-y: auto;
+  position: sticky;
+  top: var(--header-height);
+  height: calc(100vh - var(--header-height));
+}
+.site-nav__list { list-style: none; padding: 0; }
+.site-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 1rem;
+  color: var(--color-nav-text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: background .12s, color .12s;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+}
+.site-nav__link:hover {
+  background: rgb(255 255 255 / .05);
+  color: var(--color-nav-hover);
+  border-left-color: var(--color-nav-active);
+  text-decoration: none;
+}
+.site-nav__icon { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
+.site-nav__section-label {
+  display: block;
+  padding: 0.85rem 1rem 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.site-nav__socials { margin-top: 0.25rem; }
+.site-nav__link--social::before {
+  content: "↗";
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+/* ── Content ─────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 2.5rem;
+}
+
+/* ── Page Article ────────────────────────────────────────── */
+.page-article, .blog-index { max-width: 70ch; margin: 0 auto; }
+.page-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.page-title {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--color-text);
+}
+
+/* ── Share bar ───────────────────────────────────────────── */
+.share-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  margin-top: 0.75rem;
+}
+.share-bar__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.share-bar__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+}
+.share-bar__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.share-bar__button:hover,
+.share-bar__button:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  text-decoration: none;
+}
+.share-bar__button[hidden] { display: none; }
+.share-bar__icon { width: 15px; height: 15px; }
+.share-bar__separator {
+  width: 1px;
+  height: 1.25rem;
+  margin: 0 0.25rem;
+  background: var(--color-border);
+}
+.share-bar__status { font-size: 0.8125rem; color: var(--color-accent); }
+/* Vertical variant ([share] layout = "vertical"): a column pinned to the
+   right edge of the screen, in the gutter beside the article. Below 1100px
+   that gutter is too narrow to hold it, so it stays the row above. */
+@media (min-width: 1100px) {
+  .share-bar--vertical {
+    position: fixed;
+    top: 50%;
+    right: 1.25rem;
+    z-index: 40;
+    flex-direction: column;
+    margin-top: 0;
+    transform: translateY(-50%);
+  }
+  .share-bar--vertical .share-bar__label { display: none; }
+  .share-bar--vertical .share-bar__list { flex-direction: column; }
+  .share-bar--vertical .share-bar__button { background: var(--color-bg); }
+  .share-bar--vertical .share-bar__separator { width: 1.25rem; height: 1px; margin: 0.25rem 0; }
+  .share-bar--vertical .share-bar__status {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 0.5rem);
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+}
+
+/* ── Blog index ──────────────────────────────────────────── */
+.blog-list { list-style: none; margin-top: 0.5rem; }
+.blog-list__item { border-bottom: 1px solid var(--color-border); }
+.blog-list__item:last-child { border-bottom: none; }
+.blog-list__link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 1.125rem 0;
+  color: var(--color-text);
+}
+.blog-list__link:hover { color: var(--color-accent); text-decoration: none; }
+.blog-list__link:hover .blog-list__title { text-decoration: underline; }
+.blog-list__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.blog-list__date {
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.blog-empty { color: var(--color-text-muted); }
+
+/* ── Prose ───────────────────────────────────────────────── */
+.page-body h1,
+.page-body h2,
+.page-body h3,
+.page-body h4 {
+  margin-top: 1.4em;
+  margin-bottom: 0.3em;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--color-text);
+}
+.page-body h1 { font-size: 1.5rem; }
+.page-body h2 { font-size: 1.25rem; }
+.page-body h3 { font-size: 1.0625rem; }
+.page-body h4 { font-size: 0.9375rem; }
+.page-body p { margin-bottom: 0.75em; }
+.page-body ul,
+.page-body ol {
+  margin-bottom: 0.75em;
+  padding-left: 1.25rem;
+}
+.page-body li { margin-bottom: 0.15em; }
+
+/* Tree view. Guide lines + circular expand/collapse
+   markers connecting a parent bullet to its nested children, styled after
+   https://iamkate.com/code/tree-views/ (colors swapped for the theme's own
+   palette). Feature-flagged: toggled by `tree_view` in
+   org-bloom.toml, which adds/removes the .tree-view class
+   on <body> and switches on the <details>/<summary> wrapping that makes
+   each branch foldable.
+
+   Every guide line lives on the item it belongs to (border-left on the <li>
+   or <section>, sized by that element's own auto height) rather than on a
+   fixed-height pseudo-element spanning a container — so trunk lines always
+   match wrapped, multi-line headings/blocks with no manual height math.
+   The same border/marker rules apply uniformly whether a branch is a plain
+   nested list, a list starting directly inside a heading section, or a
+   nested heading section — anything that sits directly inside a <details>
+   is "nested" and gets a trunk; anything at the top of .page-body (or
+   directly inside a level1 heading) is a root and doesn't. */
+.tree-view .page-body {
+  --tree-spacing: 1.25rem;
+  --tree-radius: 0.3125rem;
+  --tree-offset: 2px; /* nudges the marker + elbow down to sit centered on the text */
+  --tree-line: var(--color-text-muted);
+  --tree-line-hover: var(--color-accent);
+  --tree-collapsed: var(--color-accent);
+  --tree-expand-icon: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2732%27%20height=%2716%27%3E%3Cg%20fill=%27%23fff%27%3E%3Cpath%20d=%27m4%207.2h3.2v-3.2h1.6v3.2h3.2v1.6h-3.2v3.2h-1.6v-3.2h-3.2z%27/%3E%3Cpath%20d=%27m20%207.2h8v1.6h-8z%27/%3E%3C/g%3E%3C/svg%3E");
+}
+.tree-view .page-body ul,
+.tree-view .page-body ol {
+  list-style: none;
+}
+.tree-view .page-body li,
+.tree-view .page-body section.level1,
+.tree-view .page-body section.level2,
+.tree-view .page-body section.level3,
+.tree-view .page-body section.level4 {
+  position: relative;
+  padding-left: calc(2 * var(--tree-spacing) - var(--tree-radius) - 2px);
+}
+/* A border-left only spans its own element's box — any child's margin that
+   collapses through the bottom edge (a trailing <p>, or a heading's own
+   margin-top collapsing through its section) opens a gap in the trunk line
+   right at that boundary. Padding never collapses, so redirecting the
+   spacing that used to live in margins into padding here keeps every trunk
+   segment touching the next, with no visible break. */
+.tree-view .page-body li {
+  margin-bottom: 0;
+  padding-bottom: 0.15em;
+  /* Same problem at the top: a first child's margin-top (e.g. a block
+     image's 1em) would collapse out through the <li> and its list, pushing
+     the whole list below the elbow's reach. A new formatting context keeps
+     it inside the item. list-style is already none here, so dropping the
+     list-item display loses nothing. */
+  display: flow-root;
+}
+.tree-view .page-body section.level1,
+.tree-view .page-body section.level2,
+.tree-view .page-body section.level3,
+.tree-view .page-body section.level4 {
+  padding-bottom: 0.15em;
+}
+.tree-view .page-body section.level1 > h1,
+.tree-view .page-body section.level1 > details > summary > h1,
+.tree-view .page-body section.level2 > h2,
+.tree-view .page-body section.level2 > details > summary > h2,
+.tree-view .page-body section.level3 > h3,
+.tree-view .page-body section.level3 > details > summary > h3,
+.tree-view .page-body section.level4 > h4,
+.tree-view .page-body section.level4 > details > summary > h4 {
+  margin: 0;
+}
+.tree-view .page-body details > summary {
+  display: block;
+  cursor: pointer;
+}
+.tree-view .page-body details > summary::-webkit-details-marker {
+  display: none;
+}
+.tree-view .page-body details > summary::marker {
+  content: "";
+}
+.tree-view .page-body details > summary:focus {
+  outline: none;
+}
+.tree-view .page-body details > summary:focus-visible {
+  outline: 1px dotted var(--tree-line);
+}
+/* Only the page's own outermost list is a "root" — no incoming trunk to
+   compensate for, so no pullback. A level1 heading is itself the root of
+   its own branch (like a top-level <li>), not a container, so its children
+   use the exact same nested formula as everything else below. */
+.tree-view .page-body > ul,
+.tree-view .page-body > ol {
+  padding-left: 1.25rem;
+}
+/* Nested lists pull back (and drop their own padding) so their children's
+   dots realign under the parent's dot — same math as the old `li > ul`
+   nesting formula, whether the parent is a <li> or a heading <section>. */
+.tree-view .page-body li > details > ul,
+.tree-view .page-body li > details > ol,
+.tree-view .page-body section.level1 > details > ul,
+.tree-view .page-body section.level1 > details > ol,
+.tree-view .page-body section.level2 > details > ul,
+.tree-view .page-body section.level2 > details > ol,
+.tree-view .page-body section.level3 > details > ul,
+.tree-view .page-body section.level3 > details > ol,
+.tree-view .page-body section.level4 > details > ul,
+.tree-view .page-body section.level4 > details > ol {
+  margin-left: calc(var(--tree-radius) - var(--tree-spacing));
+  padding-left: 0;
+}
+/* Nested heading sections only pull back (never touch padding-left — that
+   stays the item's own universal marker gutter, set above; it lives in the
+   same <details> as this node's own <summary>, so zeroing it here would
+   collapse THIS node's own text gutter, not just its children's). */
+.tree-view .page-body section.level1 > details > section.level2,
+.tree-view .page-body section.level2 > details > section.level3,
+.tree-view .page-body section.level3 > details > section.level4 {
+  margin-left: calc(var(--tree-radius) - var(--tree-spacing));
+}
+/* Trunk + elbow: any <li> or <section> sitting directly inside a <details>
+   is a nested branch and gets a line up to its parent's trunk. Covers plain
+   nested lists, nested heading sections, and a list that starts directly
+   inside a heading section, all in one rule. */
+.tree-view .page-body details > ul > li,
+.tree-view .page-body details > ol > li,
+.tree-view .page-body details > section {
+  border-left: 2px solid var(--tree-line);
+}
+.tree-view .page-body details > ul:not(:has(~ section)) > li:last-child,
+.tree-view .page-body details > ol:not(:has(~ section)) > li:last-child,
+.tree-view .page-body details > section:last-child {
+  border-color: transparent;
+}
+/* In org "auto" listify mode a leaf heading becomes a list item while its
+   sibling headings that have sub-headings stay <section>s, so a list can
+   sit between sections of the same level. Its last item isn't the end of
+   the branch then: keep its trunk (above) and move the list's bottom
+   margin into that item's padding, which its border does cover — a margin
+   would leave a gap in the trunk before the next section. */
+.tree-view .page-body details > ul:has(~ section),
+.tree-view .page-body details > ol:has(~ section) {
+  margin-bottom: 0;
+}
+.tree-view .page-body details > ul:has(~ section) > li:last-child,
+.tree-view .page-body details > ol:has(~ section) > li:last-child {
+  padding-bottom: 0.75em;
+}
+.tree-view .page-body details > ul > li::before,
+.tree-view .page-body details > ol > li::before,
+.tree-view .page-body details > section::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: calc(var(--tree-spacing) / -2);
+  left: -2px;
+  width: calc(var(--tree-spacing) + 2px);
+  height: calc(var(--tree-spacing) + 1px + var(--tree-offset));
+  border: solid var(--tree-line);
+  border-width: 0 0 2px 2px;
+}
+/* Marker: a plain dot on leaves, a clickable +/- button on branches. Both
+   share the same position so the button (bigger, opaque, z-index above)
+   simply covers the dot when a node has one. */
+.tree-view .page-body li::after,
+.tree-view .page-body section.level1::after,
+.tree-view .page-body section.level2::after,
+.tree-view .page-body section.level3::after,
+.tree-view .page-body section.level4::after,
+.tree-view .page-body li > details > summary::before,
+.tree-view .page-body section.level1 > details > summary::before,
+.tree-view .page-body section.level2 > details > summary::before,
+.tree-view .page-body section.level3 > details > summary::before,
+.tree-view .page-body section.level4 > details > summary::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: calc(var(--tree-spacing) / 2 - var(--tree-radius) + var(--tree-offset));
+  left: calc(var(--tree-spacing) - var(--tree-radius) - 1px);
+  width: calc(2 * var(--tree-radius));
+  height: calc(2 * var(--tree-radius));
+  border-radius: 50%;
+  background: var(--tree-line);
+}
+/* level1 headings are bigger (larger line-height) than everything else in
+   the tree, so the same offset that centers a level2/li marker sits a
+   couple pixels high against an h1's taller first line — nudge it further. */
+.tree-view .page-body section.level1::after,
+.tree-view .page-body section.level1 > details > summary::before {
+  top: calc(var(--tree-spacing) / 2 - var(--tree-radius) + var(--tree-offset) + 2px);
+}
+.tree-view .page-body li > details > summary::before,
+.tree-view .page-body section.level1 > details > summary::before,
+.tree-view .page-body section.level2 > details > summary::before,
+.tree-view .page-body section.level3 > details > summary::before,
+.tree-view .page-body section.level4 > details > summary::before {
+  z-index: 1;
+  background-image: var(--tree-expand-icon);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+.tree-view .page-body li > details[open] > summary::before,
+.tree-view .page-body section.level1 > details[open] > summary::before,
+.tree-view .page-body section.level2 > details[open] > summary::before,
+.tree-view .page-body section.level3 > details[open] > summary::before,
+.tree-view .page-body section.level4 > details[open] > summary::before {
+  background-position: -1rem 0;
+}
+/* A collapsed branch hides content, so its button gets a colored marker —
+   otherwise a folded list looks identical to an empty leaf from a glance. */
+.tree-view .page-body li > details:not([open]) > summary::before,
+.tree-view .page-body section.level1 > details:not([open]) > summary::before,
+.tree-view .page-body section.level2 > details:not([open]) > summary::before,
+.tree-view .page-body section.level3 > details:not([open]) > summary::before,
+.tree-view .page-body section.level4 > details:not([open]) > summary::before {
+  background-color: var(--tree-collapsed);
+}
+/* Drop line: an open branch draws its own trunk from its marker down to
+   the bottom of its summary. A child's elbow only reaches half a line up,
+   so without this a summary taller than one line (a wrapped bullet, or a
+   big multi-line heading) leaves a gap between the parent's marker and
+   its first child. Only branches with tree children (a nested list or
+   heading section) get one — a heading over a code block or quote has
+   nothing below to connect to. Positioned against the summary (hence position:
+   relative) so `bottom: 0` follows its real height; `left` lands on the
+   same x as the children's trunk (their margin-left pullback, relative to
+   the summary's left edge, which sits at the item's own padding-left).
+   The +/- button is positioned against the summary too, so it's shifted
+   back by that same padding-left to stay on top of the item's dot. */
+.tree-view .page-body details > summary {
+  position: relative;
+}
+.tree-view .page-body li > details > summary::before,
+.tree-view .page-body section.level1 > details > summary::before,
+.tree-view .page-body section.level2 > details > summary::before,
+.tree-view .page-body section.level3 > details > summary::before,
+.tree-view .page-body section.level4 > details > summary::before {
+  left: calc(var(--tree-spacing) - var(--tree-radius) - 1px
+             - (2 * var(--tree-spacing) - var(--tree-radius) - 2px));
+}
+.tree-view .page-body li > details[open]:has(> ul, > ol, > section) > summary::after,
+.tree-view .page-body section > details[open]:has(> ul, > ol, > section) > summary::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--tree-spacing) / 2 + var(--tree-offset));
+  bottom: 0;
+  left: calc(var(--tree-radius) - var(--tree-spacing));
+  border-left: 2px solid var(--tree-line);
+}
+/* Hover a branch to highlight the guide lines that belong to it. :hover
+   bubbles to every ancestor <li>/<section>, so hovering a deep item lights
+   up the whole trunk path down to it, not just its own segment. */
+.tree-view .page-body li:hover,
+.tree-view .page-body section:hover {
+  border-left-color: var(--tree-line-hover);
+}
+.tree-view .page-body li:hover::before,
+.tree-view .page-body section:hover::before {
+  border-color: var(--tree-line-hover);
+}
+.tree-view .page-body li:hover::after,
+.tree-view .page-body section:hover::after {
+  background-color: var(--tree-line-hover);
+}
+.tree-view .page-body li:hover > details > summary::before,
+.tree-view .page-body section:hover > details > summary::before {
+  background-color: var(--tree-line-hover);
+}
+.tree-view .page-body li:hover > details > summary::after,
+.tree-view .page-body section:hover > details > summary::after {
+  border-left-color: var(--tree-line-hover);
+}
+.page-body blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding: 0.4rem 0.875rem;
+  margin: 1em 0;
+  background: rgb(96 165 250 / .06);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.page-body code {
+  font-family: var(--font-mono);
+  font-size: 0.8125em;
+  background: #252529;
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  color: #f472b6;
+}
+.page-body pre {
+  background: #0d0d0f;
+  color: #c9d1d9;
+  padding: 0.875rem 1.125rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1em;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  box-shadow: var(--shadow-md);
+}
+.page-body pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+.page-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  font-size: 0.875rem;
+}
+.page-body th,
+.page-body td {
+  border: 1px solid var(--color-border);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+}
+.page-body th {
+  background: #1e1e22;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+}
+.page-body img {
+  border-radius: var(--radius);
+  margin: 1em 0;
+  box-shadow: var(--shadow-md);
+}
+.page-body hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5em 0;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.site-footer {
+  background: var(--color-nav-bg);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  border-top: 1px solid rgb(255 255 255 / .05);
+}
+.site-footer__inner { padding: 0.75rem 1.5rem; text-align: center; }
+.site-footer__link { color: var(--color-nav-active); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .menu-toggle { display: flex; }
+
+  .site-nav {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    height: calc(100vh - var(--header-height));
+    width: 100%;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    z-index: 50;
+  }
+  .site-nav.is-open { transform: translateX(0); }
+
+  .content { padding: 1.25rem 1rem; }
+  .page-title { font-size: 1.375rem; }
+}
+
+/* ── Org-mode: date & author, tags, timestamps ─────────────────────────────── */
+.page-meta {
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+.page-meta a { color: inherit; }
+.page-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tag {
+  display: inline-block;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  vertical-align: middle;
+}
+.tag::before { content: "#"; opacity: 0.6; }
+a.tag:hover { color: var(--color-accent); border-color: var(--color-accent); }
+.tag--title { font-size: 1.125rem; }
+.timestamp {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.timestamp--inactive { color: var(--color-text-muted); }
+.blog-list__author {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.tag-index__heading { font-size: 1rem; margin-top: 1.5rem; }
+.tag-index__list { padding-left: 1.25rem; }
+.tag-index__page { color: var(--color-text-muted); font-size: 0.875rem; }

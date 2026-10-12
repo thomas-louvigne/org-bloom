@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "logseq-site-builder"
+name = "org-bloom"
 version = "0.1.0"
-description = "Convert a Logseq knowledge base into a static website"
+description = "The org-mode static website-builder. Works with Logseq & Orgamnesia."
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.1",
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-logseq-builder = "logseq_builder.cli:main"
+org-bloom = "org_bloom.cli:run"
 
 [project.optional-dependencies]
 dev = [
@@ -27,7 +27,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-"logseq_builder" = ["templates/**/*", "templates/*", "static/**/*", "static/*", "themes/**/*", "themes/*"]
+"org_bloom" = ["templates/**/*", "templates/*", "static/**/*", "static/*", "themes/**/*", "themes/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

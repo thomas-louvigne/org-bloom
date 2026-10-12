@@ -3,7 +3,7 @@ title:: Projets
 
 # Mes projets
 
-## logseq-site-builder
+## org-bloom
 
 Générateur de site statique à partir d'un graphe Logseq. Voir mes [[Notes Logseq][notes techniques]] associées.
 

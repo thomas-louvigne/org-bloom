@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from logseq_builder.domain.page import SHARE_BUTTONS, Page
-from logseq_builder.services.site_config import build_site_config, resolve_home_slug
+from org_bloom.domain.page import SHARE_BUTTONS, Page
+from org_bloom.services.site_config import build_site_config, resolve_home_slug
 
 
 def _config(toml: dict):
@@ -69,3 +69,30 @@ def test_home_by_filename_resolves_to_real_slug():
 def test_unknown_home_warns():
     slug, warning = resolve_home_slug("nope", [_page("Autre", "autre", "autre")])
     assert slug == "nope" and warning
+
+
+def _org_config(toml: dict):
+    return build_site_config(toml, title=None, default_title="T", all_public=False, social_links=[], logseq=False)
+
+
+def test_logseq_defaults_opt_in_and_bullets():
+    config, _ = _config({})
+    assert config.all_public is False
+    assert config.org_listify_headings_from == "auto"
+
+
+def test_org_project_defaults_public_and_real_headings():
+    config, _ = _org_config({})
+    assert config.all_public is True
+    assert config.org_listify_headings_from is None
+
+
+def test_org_project_defaults_can_be_overridden():
+    config, _ = _org_config({"site": {"all_public": False, "org_listify_headings_from": "auto"}})
+    assert config.all_public is False
+    assert config.org_listify_headings_from == "auto"
+
+
+def test_journal_dates_written_out_outside_logseq():
+    assert _config({})[0].journal_page_title_format == "dd-MM-yyyy"
+    assert _org_config({})[0].journal_page_title_format == ""

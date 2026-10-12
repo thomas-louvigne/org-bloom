@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ tag.name }} — {{ config.title }}{% endblock %}
+
+{% block content %}
+<article class="tag-index">
+  <header class="page-header">
+    <h1 class="page-title"><span class="tag tag--title">{{ tag.name }}</span></h1>
+    {% if namesake_url %}
+    <p class="page-meta"><a href="{{ namesake_url }}">Voir la page « {{ tag.name }} »</a></p>
+    {% endif %}
+  </header>
+  {% if tag.pages %}
+  <h2 class="tag-index__heading">Pages</h2>
+  <ul class="tag-index__list">
+    {% for page in tag.pages %}
+    <li><a href="{{ page_url(page) }}">{{ page.headline or page.title }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if tag.headlines %}
+  <h2 class="tag-index__heading">Titres</h2>
+  <ul class="tag-index__list">
+    {% for hit in tag.headlines %}
+    <li><a href="{{ page_url(hit.page) }}#{{ hit.anchor }}">{{ hit.title }}</a> <span class="tag-index__page">— {{ hit.page.headline or hit.page.title }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</article>
+{% endblock %}
