@@ -8,7 +8,7 @@ import click
 
 from .adapters.edn_config_loader import PROJECT_SOURCES, generate_toml, resolve_source
 from .adapters.logseq_reader import LogseqReader
-from .adapters.pandoc_converter import PandocConverter
+from .adapters.pandoc_converter import PandocConverter, PandocUnavailable, check_pandoc
 from .adapters.static_writer import StaticWriter
 from .adapters.themes import builtin_theme_names, resolve_theme_css
 from .adapters.toml_config_loader import CONFIG_FILENAME, config_path, load_toml_config, read_toml_file
@@ -98,6 +98,12 @@ def main(
     OUTPUT_DIR is wiped on every build; without it, output_dir from the [site]
     table of org-bloom.toml is used (relative to INPUT_DIR).
     """
+    try:
+        pandoc_version = check_pandoc()
+    except PandocUnavailable as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+
     logseq, source_warning = resolve_source(input_dir, source or read_toml_file(input_dir).get("site", {}).get("source"))
     if source_warning:
         _warn(source_warning)
@@ -111,6 +117,7 @@ def main(
     if toml_path.exists():
         click.echo(f"Loaded config from {toml_path}")
     click.echo("  Source: Logseq graph" if logseq else "  Source: org-mode project (Orgamnesia, Emacs)")
+    click.echo(f"  Pandoc: {pandoc_version}")
     site_section = toml.get("site", {})
     output_dir = _resolve_output_dir(output_dir, site_section.get("output_dir"), input_dir, toml_path)
 

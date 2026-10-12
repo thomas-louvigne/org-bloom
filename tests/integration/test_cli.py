@@ -231,3 +231,30 @@ def test_html_attachment_in_assets_is_not_an_external_dep(org_project, tmp_path)
     assert (out / "assets" / "lettre.html").exists()
     assert 'href="assets/lettre.html"' in (out / "quete.html").read_text(encoding="utf-8")
     assert "lettre.html" not in result.output
+
+
+@pytest.mark.parametrize(
+    ("version", "message"),
+    [(OSError("No pandoc was found"), "pandoc not found"), ("3.1.3", "pandoc 3.1.3 is too old")],
+)
+def test_missing_or_old_pandoc_stops_before_building(org_project, tmp_path, monkeypatch, version, message):
+    def fake_version():
+        if isinstance(version, Exception):
+            raise version
+        return version
+
+    monkeypatch.setattr("org_bloom.adapters.pandoc_converter.pypandoc.get_pandoc_version", fake_version)
+    out = tmp_path / "site"
+    result = _run(org_project, out)
+    assert result.exit_code == 1
+    assert message in result.output
+    assert "3.8 or later" in result.output
+    assert not out.exists()
+    assert not (org_project / "org-bloom.toml").exists()
+
+
+def test_pandoc_version_is_shown(org_project, tmp_path, monkeypatch):
+    monkeypatch.setattr("org_bloom.adapters.pandoc_converter.pypandoc.get_pandoc_version", lambda: "3.12.1")
+    result = _run(org_project, tmp_path / "site", "--no-init-toml")
+    assert result.exit_code == 0, result.output
+    assert "Pandoc: 3.12.1" in result.output

@@ -25,7 +25,7 @@ Example: [[https://chroniques-insoumises.com/][chroniques-insoumises.com]], a Lo
 
 * Quick start
 
-Requires Python 3.11+ and [[https://pandoc.org/installing.html][pandoc]].
+Requires Python 3.11+ and [[https://pandoc.org/installing.html][pandoc]] 3.8 or later (checked at startup).
 
 #+BEGIN_SRC bash
 git clone https://github.com/thomas-louvigne/org-bloom.git
