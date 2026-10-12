@@ -1,0 +1,27 @@
+* Which pages are published
+
+- *Logseq graph:* opt-in — only pages with =#+PUBLIC: true= (Org) or =public:: true= (Markdown), unless =all_public = true= (or Logseq's =:publishing/all-pages-public?=).
+- *Org-mode project:* opt-out — every page, except those marked private below. =all_public = false= restores the opt-in rule.
+
+=#+PUBLIC: false= (Org) or =public:: false= (Markdown) keep a page private when every page is published.
+
+* Keeping notes private: noexport
+
+The =noexport= tag keeps a note out of the site, whatever the publishing mode:
+
+| | To hide a whole page | To hide part of a page |
+|-+----------------------+------------------------|
+| Emacs org-mode, org-roam, Orgamnesia | =#+FILETAGS: :noexport:= | tag the headline: =* Brouillon :noexport:= — the headline and everything under it are left out |
+| Logseq, Org page | =#+filetags: :noexport:= (what Logseq writes when you add the =noexport= tag to the page) | same as Emacs: =* Brouillon :noexport:= |
+| Logseq, Markdown page | =tags:: noexport= in the first block (the page properties) | — |
+
+* Hiding folders and files
+
+To leave out folders or files, list them in =hidden=, relative to the project root:
+
+#+BEGIN_SRC toml
+[site]
+hidden = ["/archives", "/pages/drafts", "/pages/secret.org"]
+#+END_SRC
+
+A Logseq graph fills =hidden= from =:hidden= in =logseq/config.edn=. Some folders are never read anyway — see [[Project-types][Project types]].

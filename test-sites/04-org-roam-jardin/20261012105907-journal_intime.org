@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       0f7c5149-85e7-49d4-af94-50952a89a95f
+:END:
+#+title: Journal intime
+#+filetags: :noexport:
+
+
+Rien à voir ici. [[id:2cdb3272-c7bb-4c8c-a8cc-64155edf6402][Accueil]]

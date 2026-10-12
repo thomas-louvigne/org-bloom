@@ -86,12 +86,11 @@ def _parse_is_public(content: str, all_public: bool) -> bool:
     return bool(_PUBLIC_TRUE.search(content))
 
 
-def _parse_headline(content: str, fmt: str) -> str:
-    """Best-effort title for a journal entry: an explicit #+TITLE:/title::
-    directive, else its first heading, else empty (falls back to the date)."""
-    m = _TITLE_DIRECTIVE.search(content)
-    if m:
-        return m.group(1).strip()
+def _parse_headline(content: str, fmt: str, title: str) -> str:
+    """Best-effort title for a journal entry: its `title` (from #+TITLE:/title::),
+    else its first heading, else empty (falls back to the date)."""
+    if title:
+        return title
     heading_re = _ORG_HEADING if fmt == "org" else _MD_HEADING
     m = heading_re.search(content)
     return m.group(1).strip() if m else ""
@@ -240,11 +239,16 @@ class LogseqReader(PageRepository):
             date = _parse_date_directive(content) or file_date
             date_label = self._format_title(date)
             title_match = _TITLE_DIRECTIVE.search(content)
+            title = title_match.group(1).strip() if title_match else ""
+            if self._parse_date(title) in (date, file_date):
+                # org-roam dailies are titled "2026-10-12": the date shown
+                # under the title would repeat it.
+                title = ""
             fmt = _page_format(path)
             slug = f"journal-{file_date.isoformat()}"
             pages.append(Page(
                 # An explicit #+TITLE names the post; otherwise its date does.
-                title=title_match.group(1).strip() if title_match else date_label,
+                title=title or date_label,
                 slug=slug,
                 raw_content=content,
                 source_path=path,
@@ -252,7 +256,7 @@ class LogseqReader(PageRepository):
                 is_public=True,
                 date=date,
                 date_label=date_label,
-                headline=_parse_headline(content, fmt),
+                headline=_parse_headline(content, fmt, title),
                 author=_parse_author(content),
                 tags=[t for t in _parse_tags(content) if t != NOEXPORT],
             ))

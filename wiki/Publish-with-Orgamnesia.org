@@ -1,0 +1,36 @@
+[[https://github.com/thomas-louvigne/orgamnesia][Orgamnesia]] projects are org-mode folders, so org-bloom publishes them as they are, and Orgamnesia's Export button calls org-bloom.
+
+* 1. Install org-bloom
+
+See [[Installation][Installation]]. The =org-bloom= command must be on the =PATH= Orgamnesia sees.
+
+* 2. Set the output folder once
+
+The Export button runs =org-bloom build <project>=, without an output folder. Tell org-bloom where to build in =org-bloom.toml=, at the root of the project (it is created on the first build):
+
+#+BEGIN_SRC toml
+[site]
+title      = "My project"
+output_dir = "../my-project-site"   # relative to the project — wiped on every build
+#+END_SRC
+
+org-bloom refuses an output folder that contains the project itself.
+
+* 3. Export
+
+Click Export in Orgamnesia, or from a terminal:
+
+#+BEGIN_SRC bash
+org-bloom build ~/Orgamnesia/my-project
+#+END_SRC
+
+* What org-bloom does with a project
+
+- every =.org= page is read, *subfolders included*;
+- =.trash= (Orgamnesia's trash) and other hidden folders are skipped;
+- the =* Élody= headline Orgamnesia writes at the top of a new page =Élody.org= is not shown again under the page title;
+- =*= headlines stay real headings.
+
+* Choose what is published
+
+*Every page is published* by default. Keep a page private with =#+FILETAGS: :noexport:= (or =#+PUBLIC: false=), a part of it with =* Headline :noexport:=. See [[Publishing-and-privacy][Publishing and privacy]].

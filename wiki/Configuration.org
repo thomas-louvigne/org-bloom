@@ -1,0 +1,37 @@
+* org-bloom.toml
+
+On first run, an =org-bloom.toml= is generated at the root of your project. Edit it to set the title, theme, nav menu, blog, RSS, share buttons… Every option is documented in [[https://github.com/thomas-louvigne/org-bloom/blob/main/org-bloom.example.toml][org-bloom.example.toml]].
+
+Its tables:
+
+| Table               | What it sets                                                     |
+|---------------------+------------------------------------------------------------------|
+| =[site]=            | title, home page, theme, output folder, publishing mode, journals… |
+| =[[menu]]=          | one entry of the nav menu (repeatable), or a random page link    |
+| =[social_networks]= | social links in the nav menu                                     |
+| =[share]=           | the share & print bar: layout and each button                    |
+| =[[external_static_dirs]]= | mini-sites copied in from outside the project            |
+
+* Logseq settings are imported
+
+For a Logseq graph, the generated =org-bloom.toml= is pre-filled from =logseq/config.edn=: home page (=:default-home=), all-pages-public (=:publishing/all-pages-public?=), hidden paths (=:hidden=), pages and journals folders, journals on/off and their date formats.
+
+=config.edn= is also read on every build for any key the TOML leaves out, so the graph keeps working even without a TOML.
+
+*Priority:* command-line options > TOML file > =logseq/config.edn=.
+
+* Command-line options
+
+| Option                   | Description                                                 |
+|--------------------------+-------------------------------------------------------------|
+| =--site-title TEXT=      | Site title (default: directory name)                        |
+| =--home-page SLUG=       | Page to use as =index.html=                                 |
+| =--all-public=           | Publish all pages, ignore =#+PUBLIC=                        |
+| =--social NAME:URL=      | Social link in the nav menu (repeatable)                    |
+| =--theme NAME_OR_PATH=   | =default=, =dark=, =nord=, or a path to a CSS file          |
+| =--check-links=          | List internal links that would 404                          |
+| =--check-assets=         | List assets that no page references                         |
+| =--zip=                  | Zip the built site into =<output_dir>.zip=                  |
+| =--no-init-toml=         | Skip generating the TOML on first run                       |
+
+See also [[Checks-and-tools][Checks and tools]].

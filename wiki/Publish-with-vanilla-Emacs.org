@@ -1,0 +1,127 @@
+You keep plain =.org= files in a folder and edit them with Emacs. org-bloom publishes that folder as is: no Logseq, no package to install in Emacs, nothing to change in your notes.
+
+* 1. Build the site
+
+#+BEGIN_SRC bash
+org-bloom ~/org ~/Sites/my-site
+#+END_SRC
+
+=~/org= is read as an /org-mode project/ (it has no =logseq/= folder):
+
+- every =.org= file is read, *subfolders included* — except hidden folders (=.git=…), =assets/= and the output folder;
+- if the folder has a =pages/= subfolder, only that one is read;
+- =*= headlines stay real headings, like an Emacs HTML export.
+
+* 2. Choose what is published
+
+*Every page is published* by default. To keep notes private:
+
+#+BEGIN_SRC org
+# The whole file stays private:
+,#+FILETAGS: :noexport:
+# Same thing:
+,#+PUBLIC: false
+
+# This headline and everything under it stay private:
+,* Brouillon :noexport:
+#+END_SRC
+
+=:noexport:= is the same tag =org-export= already honours, so a file you never exported stays private here too. To leave out whole folders, list them in =hidden= — see [[Publishing-and-privacy][Publishing and privacy]].
+
+To publish only the files you mark instead, set =all_public = false= in =org-bloom.toml= and add =#+PUBLIC: true= to each of them.
+
+* 3. What org-bloom understands
+
+| In your file                          | On the site                                         |
+|---------------------------------------+-----------------------------------------------------|
+| =#+TITLE:=                            | page title and URL (otherwise the file name)        |
+| =#+DATE:=, =#+AUTHOR:=                | shown under the title                               |
+| =#+FILETAGS:=, =* Headline :tag:=     | tag links and one page per tag — see [[Tags][Tags]] |
+| =[[file:other.org][…]]=               | link to that page                                   |
+| =[[file:other.org::*Headline]]=, =[[*Headline]]=, =[[#custom-id]]= | link to a headline     |
+| =[[file:docs/guide.pdf]]=             | the file is copied next to the site                 |
+| =<2026-10-12 Mon>=                    | /12 octobre 2026/ (in the site's =lang=)            |
+
+Pages are converted with pandoc's org reader: tables, source blocks, lists, emphasis and footnotes come out as in an Emacs export.
+
+* 4. Home page and blog
+
+- *Home page*: a page named =index=, =home=, =accueil= or =readme= is picked automatically; otherwise set =home_page = "my-file"= (file name or title) in =org-bloom.toml=.
+- *Blog*: put dated files in =journals/= — =2026-10-12.org= (or =2026_10_12.org=, =20261012.org=) — and set =enable_journals = true=. See [[Blog-dates-and-authors][Blog, dates and authors]].
+
+* 5. Build from Emacs
+
+Set =output_dir= once in =org-bloom.toml=, then build without leaving Emacs:
+
+#+BEGIN_SRC emacs-lisp
+(defun my/org-bloom-build ()
+  "Build the site of ~/org with org-bloom."
+  (interactive)
+  (compile "org-bloom ~/org"))
+#+END_SRC
+
+* Tip: follow page links in Emacs as on the site
+
+On the site, =[[mon-autre-page]]=, =[[Mon autre page]]= and =[[MON AUTRE PAGE]]= all lead to the same page: org-bloom ignores case, dashes, spaces, underscores and accents, and matches the file name or the =#+TITLE=. In Emacs, such a link only searches a headline of the current file.
+
+Add this to your init file (=lexical-binding= on) so that Emacs follows them the same way:
+
+#+BEGIN_SRC emacs-lisp
+(require 'ucs-normalize)
+(require 'seq)
+
+(defun my/org-bloom-slug (text)
+  "TEXT the way org-bloom names pages: \"Été 2026\" → \"ete-2026\"."
+  (let ((s (downcase (concat (seq-filter (lambda (c) (< c 128))
+                                 (ucs-normalize-NFKD-string text))))))
+    (setq s (replace-regexp-in-string "[[:space:]_]+" "-" s))
+    (setq s (replace-regexp-in-string "[^a-z0-9-]" "" s))
+    (setq s (replace-regexp-in-string "-+" "-" s))
+    (string-trim s "-+" "-+")))
+
+(defun my/org-bloom-page-title (file)
+  "The #+TITLE of FILE, or nil."
+  (with-temp-buffer
+    (insert-file-contents file nil 0 4096)
+    (let ((case-fold-search t))
+      (when (re-search-forward "^#\\+title:[ \t]*\\(.+\\)$" nil t)
+        (string-trim (match-string 1))))))
+
+(defun my/org-bloom-open-page (link)
+  "Open the page LINK names, as org-bloom resolves it on the site.
+[[mon-autre-page]], [[Mon autre page]] and [[MON AUTRE PAGE]] all open
+mon-autre-page.org, or the file whose #+TITLE is \"Mon autre page\".
+Case, dashes, spaces, underscores and accents do not matter."
+  (let* ((root (or (locate-dominating-file default-directory "org-bloom.toml")
+                   default-directory))
+         (slug (my/org-bloom-slug link))
+         (files (directory-files-recursively
+                 root "\\`[^.].*\\.org\\'" nil
+                 (lambda (dir) (not (string-prefix-p "." (file-name-nondirectory dir))))))
+         (file (or (seq-find (lambda (f) (equal slug (my/org-bloom-slug (file-name-base f)))) files)
+                   (seq-find (lambda (f) (let ((title (my/org-bloom-page-title f)))
+                                           (and title (equal slug (my/org-bloom-slug title)))))
+                             files))))
+    (when file
+      (find-file file)
+      t)))
+
+(add-hook 'org-open-link-functions #'my/org-bloom-open-page)
+#+END_SRC
+
+- The page is looked up from the folder holding =org-bloom.toml= (else the current folder), subfolders included, hidden ones (=.trash=, =.git=…) skipped.
+- A link that names no page keeps Emacs' usual behaviour: it jumps to the matching headline of the current file.
+- =file:= and =id:= links are not affected.
+
+* Coming from org-publish
+
+| org-publish (=org-publish-project-alist=) | org-bloom (=org-bloom.toml=)               |
+|-------------------------------------------+--------------------------------------------|
+| =:base-directory=                         | the project folder given on the command line |
+| =:publishing-directory=                   | =output_dir= (or the second argument)      |
+| =:recursive t=                            | always on                                  |
+| =:exclude=                                | =hidden=                                   |
+| =:html-head= / CSS                        | =theme= (built-in or your own CSS file)    |
+| =:auto-sitemap=                           | the nav menu, tag pages and search         |
+
+Keep your org-publish setup if you like: org-bloom only reads your files and writes to its own output folder.

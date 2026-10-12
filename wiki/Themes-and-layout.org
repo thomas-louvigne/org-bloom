@@ -1,0 +1,37 @@
+[[https://raw.githubusercontent.com/thomas-louvigne/org-bloom/main/docs/themes.png]]
+
+* Themes
+
+Three built-in themes — =default=, =dark= and =nord= — or bring your own CSS:
+
+#+BEGIN_SRC toml
+[site]
+theme = "nord"            # or "path/to/my-theme.css"
+#+END_SRC
+
+or =--theme NAME_OR_PATH= on the command line.
+
+* Tree view
+
+The optional *tree view* (=tree_view = true=, shown on =default= and =nord= above) draws guide lines between nested bullets and makes every branch foldable; turn it off for classic bullets (=dark= above).
+
+* Share & print bar
+
+Every page gets a *share & print bar* under its title, or pinned to the right edge with =layout = "vertical"=: WhatsApp, Facebook, X, Bluesky, LinkedIn, e-mail, copy link, and the native share sheet on mobile. Each button can be switched off from the =[share]= table of the TOML.
+
+Printing a page gives a clean view without the menu, ending with the site title and address.
+
+* Nav menu, social links and random page
+
+The nav menu is a list of =[[menu]]= entries in the TOML; social links go in =[social_networks]= (or =--social NAME:URL=).
+
+A menu entry with =random = true= links to a random published page, under the =label= you give it.
+
+* Search
+
+Full-text search runs in the browser (Fuse.js): no server needed.
+
+* Custom pages and external sites
+
+- *Custom HTML/CSS pages* are copied as-is (embeds, mini-apps, slide decks…).
+- *External static sites* — mini-sites that live outside the project — are copied in with =[[external_static_dirs]]=.

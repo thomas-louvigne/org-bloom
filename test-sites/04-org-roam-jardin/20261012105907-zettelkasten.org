@@ -1,0 +1,10 @@
+:PROPERTIES:
+:ID:       94ed2b23-7f75-4fca-a7a8-14106ab36826
+:ROAM_ALIASES: ZK
+:ROAM_REFS: https://zettelkasten.de
+:END:
+#+title: Zettelkasten
+#+filetags: :methode:notes:
+
+
+Une méthode de prise de notes. Voir [[id:2cdb3272-c7bb-4c8c-a8cc-64155edf6402][Accueil]].

@@ -1,0 +1,5 @@
+Page tags (=#+FILETAGS: :a:b:=, Logseq's =tags::=) are shown under the page title, and headline tags (=* Title :a:b:=) next to the headline, as links.
+
+Each tag gets a page, =tag-<name>.html=, listing the pages and headlines that carry it, with a link to the page of the same name when there is one.
+
+=noexport= is never shown: it keeps a note private — see [[Publishing-and-privacy][Publishing and privacy]].

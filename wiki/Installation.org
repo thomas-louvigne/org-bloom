@@ -1,0 +1,35 @@
+* Requirements
+
+- Python 3.11+
+- [[https://pandoc.org/installing.html][pandoc]]
+
+* Install
+
+#+BEGIN_SRC bash
+git clone https://github.com/thomas-louvigne/org-bloom.git
+cd org-bloom
+python -m venv .venv
+source .venv/bin/activate   # .venv\Scripts\activate on Windows
+pip install -e .
+#+END_SRC
+
+* First build
+
+#+BEGIN_SRC bash
+org-bloom ~/my-notes ~/Sites/my-site
+#+END_SRC
+
+The output folder can also be set once, as =output_dir= in the =[site]= table of =org-bloom.toml= (relative to the project); =org-bloom ~/my-notes= then builds there. =org-bloom build ~/my-notes= works too — that is how Orgamnesia's Export button calls it.
+
+*Warning:* the output directory is *wiped* before every build — point it at a folder that holds nothing but the generated site. org-bloom refuses a folder that contains the project itself.
+
+On first run, an =org-bloom.toml= is generated at the root of your project. Edit it to set the title, theme, nav menu, blog, RSS, etc. — see [[Configuration][Configuration]].
+
+* Preview locally
+
+#+BEGIN_SRC bash
+cd ~/Sites/my-site
+python3 -m http.server 8080
+#+END_SRC
+
+Then open http://localhost:8080.

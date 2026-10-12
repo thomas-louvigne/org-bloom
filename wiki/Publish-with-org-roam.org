@@ -1,0 +1,60 @@
+Your notes live in an [[https://www.orgroam.com/][org-roam]] directory (=~/org-roam= by default) and link to each other by ID. org-bloom reads that directory directly: no database export, no =org-roam-ui=, nothing to change in your notes.
+
+* 1. Build the site
+
+#+BEGIN_SRC bash
+org-bloom ~/org-roam ~/Sites/my-notes
+#+END_SRC
+
+The directory is read as an /org-mode project/: every =.org= file, *subfolders included*, except hidden folders (=.git=…), =assets/= and the output folder. The =daily/= folder is not read as pages: it becomes the blog (see step 4).
+
+* 2. ID links just work
+
+org-roam writes links as =[[id:2f0c…][Label]]=. org-bloom resolves them from the =:ID:= of the =:PROPERTIES:= drawers:
+
+- a file-level drawer (at the top of the file) → link to that page;
+- a headline drawer → link to that headline in its page.
+
+The link keeps the label you inserted, an alias included (=[[id:…][ZK]]= for a note titled /Zettelkasten/). =[[roam:Title]]= links are rewritten as =id:= links by org-roam itself when you save, and plain =[[Title]]= links lead to the note with that title.
+
+An ID that points to a private or missing note is shown as its plain label, and listed by:
+
+#+BEGIN_SRC bash
+org-bloom ~/org-roam ~/Sites/my-notes --check-links
+#+END_SRC
+
+* 3. Choose what is published
+
+*Every note is published* by default. A roam directory often mixes public and private notes, so you may prefer the opt-in rule — in =org-bloom.toml=, at the root of the directory:
+
+#+BEGIN_SRC toml
+[site]
+all_public = false     # only notes with #+PUBLIC: true are published
+#+END_SRC
+
+Either way, =#+FILETAGS: :noexport:= keeps a note private, and =* Headline :noexport:= hides a part of it. An =id:= link to a private note becomes its plain label, so the note's URL is never shown; =--check-links= lists the other links that point to a private note. See [[Publishing-and-privacy][Publishing and privacy]].
+
+* 4. Dailies become a blog
+
+org-roam's daily notes (=daily/2026-10-12.org=) become blog posts with an RSS feed:
+
+#+BEGIN_SRC toml
+[site]
+enable_journals = true
+rss = true
+base_url = "https://notes.example.com"
+#+END_SRC
+
+=#+title:= gives a post its title; the =#+title: 2026-10-12= org-roam writes is shown once, written out (/12 octobre 2026/), =#+DATE:= and =#+AUTHOR:= are shown too. If you changed =org-roam-dailies-directory=, set =journals_directory= to the same folder. See [[Blog-dates-and-authors][Blog, dates and authors]].
+
+* 5. Tags
+
+org-roam stores tags in =#+filetags: :a:b:= and on headlines — both become tag links, with one page per tag. =ROAM_ALIASES= and =ROAM_REFS= are not used. See [[Tags][Tags]].
+
+* Home page
+
+Name a note =index=, =home= or =accueil= (title or file name) to make it the home page, or set =home_page= in =org-bloom.toml=. org-roam file names (=20261012103000-my_note.org=) do not matter: URLs come from =#+title:=.
+
+* Tested with org-roam
+
+The [[https://github.com/thomas-louvigne/org-bloom/tree/main/test-sites/04-org-roam-jardin][test-sites/04-org-roam-jardin]] graph is written by org-roam itself (node capture, dailies, tags, aliases, refs, headline IDs) with =scripts/make-org-roam-test-site.el=, and =tests/integration/test_org_roam_site.py= checks the site built from it: ID links to files and headlines, aliases, the =noexport= note and headline, tags, dailies and RSS. Last checked with org-roam from MELPA (April 2026), Org 9.8 and Emacs 31.

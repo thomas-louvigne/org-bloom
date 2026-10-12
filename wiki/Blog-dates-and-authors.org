@@ -1,0 +1,19 @@
+* The blog
+
+The blog is built from the journals folder — =journals/= (Logseq) or =daily/= (org-roam) — once =enable_journals = true=. It gets an index page and an RSS feed.
+
+Journal files are named after their date: =journal_file_name_format= (Logseq's =yyyy_MM_dd=), =2026-10-12= (org-roam) or =20261012= (org-journal).
+
+In each post:
+
+- =#+TITLE:= gives the post its title (otherwise its date does) — a title that is only the date, as org-roam writes =#+title: 2026-10-12=, is replaced by the date written out, so the date is shown once;
+- =#+DATE:= gives its date (otherwise the file name does);
+- =#+AUTHOR:= is shown under the title, in the blog list and as the RSS =dc:creator=. *No =#+AUTHOR=, no author shown.*
+
+* Dates and authors on pages
+
+Ordinary pages show their =#+DATE= and =#+AUTHOR= under the title too, when they have them. Logseq Markdown pages can use =date::= and =author::=.
+
+* Timestamps
+
+Org timestamps in the text — =<2026-10-12 Mon>=, =[2026-10-11 Sun 10:00]=, ranges and repeaters — are written out in the site's =lang= (/12 octobre 2026 à 10:00/, /October 11, 2026, 10:00/; other languages: ISO dates). Code blocks are left alone.

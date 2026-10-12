@@ -1,0 +1,9 @@
+| Option          | What it does                                                         |
+|-----------------+----------------------------------------------------------------------|
+| =--check-links= | lists internal links that would 404 (wiki links, org links, org-roam IDs) |
+| =--check-assets=| lists assets that no page references                                 |
+| =--zip=         | zips the built site into =<output_dir>.zip=                          |
+
+#+BEGIN_SRC bash
+org-bloom ~/my-notes ~/Sites/my-site --check-links --check-assets
+#+END_SRC

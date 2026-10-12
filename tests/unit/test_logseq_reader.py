@@ -231,3 +231,9 @@ class TestOrgJournals:
         post = list(self._reader(roam).find_journals())[1]
         assert post.title == post.date_label == "5 octobre 2026"
         assert post.headline == "Notes du jour"
+
+    def test_title_that_is_the_date_is_not_repeated(self, roam):
+        # What org-roam-dailies writes: #+title: 2026-10-05
+        (roam / "daily" / "2026-10-05.org").write_text("#+title: 2026-10-05\nTexte.\n", encoding="utf-8")
+        post = list(self._reader(roam).find_journals())[1]
+        assert post.title == post.date_label == "5 octobre 2026"

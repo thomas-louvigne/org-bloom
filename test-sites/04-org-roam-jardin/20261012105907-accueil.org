@@ -1,0 +1,14 @@
+:PROPERTIES:
+:ID:       2cdb3272-c7bb-4c8c-a8cc-64155edf6402
+:END:
+#+title: Accueil
+
+
+Bienvenue.
+
+- [[id:94ed2b23-7f75-4fca-a7a8-14106ab36826][Zettelkasten]]
+- [[id:8246313c-bc11-42e9-8498-bd88db90e960][Été à Montréal]]
+- [[id:9b78c27a-8458-41d1-a4a2-eb87bfc3775c][Tarte aux pommes]]
+- [[id:0f7c5149-85e7-49d4-af94-50952a89a95f][Journal intime]]
+- un lien roam: [[id:3976c46b-49be-4e47-83c9-072414bc4e3e][Cuisine]]
+- un lien fuzzy: [[Cuisine]]

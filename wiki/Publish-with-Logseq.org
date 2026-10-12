@@ -1,0 +1,54 @@
+Your notes are a [[https://logseq.com/][Logseq]] graph (in Org or Markdown). org-bloom reads the graph folder directly and keeps Logseq's own settings: no export from the app needed.
+
+* 1. Build the site
+
+#+BEGIN_SRC bash
+org-bloom ~/logseq-graph ~/Sites/my-site
+#+END_SRC
+
+The =logseq/= folder tells org-bloom it is a Logseq graph: =.org= and =.md= pages are read from =pages/=, journals from =journals/=.
+
+* 2. Your Logseq settings are imported
+
+On first run, =org-bloom.toml= is pre-filled from =logseq/config.edn=:
+
+| =logseq/config.edn=                    | =org-bloom.toml=                                 |
+|----------------------------------------+--------------------------------------------------|
+| =:default-home=                        | =home_page=                                      |
+| =:publishing/all-pages-public?=        | =all_public=                                     |
+| =:hidden=                              | =hidden=                                         |
+| =:pages-directory=, =:journals-directory= | =pages_directory=, =journals_directory=       |
+| =:feature/enable-journals?=            | =enable_journals=                                |
+| =:journal/page-title-format=, =:journal/file-name-format= | =journal_page_title_format=, =journal_file_name_format= |
+
+=config.edn= is read again on every build for any key the TOML leaves out. See [[Configuration][Configuration]].
+
+* 3. Choose what is published
+
+Like Logseq's own publishing, a page is published only if it says so:
+
+- Org page: =#+PUBLIC: true=
+- Markdown page: =public:: true= in the first block
+
+or every page at once with =all_public = true= (=:publishing/all-pages-public?= in Logseq). The =noexport= tag always keeps a page private — see [[Publishing-and-privacy][Publishing and privacy]].
+
+* 4. What org-bloom understands
+
+| In Logseq                                   | On the site                                       |
+|---------------------------------------------+---------------------------------------------------|
+| =[[Page]]=, =#tag=                          | link to that page                                 |
+| =tags::=, =#+FILETAGS:=                     | tag links and one page per tag                    |
+| =title::=, =date::=, =author::=             | page title, date and author                       |
+| =../assets/…= images and files              | copied into the site                              |
+| journals                                    | the blog, with an RSS feed (=rss = true=)         |
+| nested blocks                               | nested bullets, foldable with =tree_view = true=  |
+
+* Coming from Logseq's "Export public pages"
+
+| Logseq publishing                      | org-bloom                                                  |
+|----------------------------------------+------------------------------------------------------------|
+| a JavaScript app (the Logseq client)   | plain HTML pages: fast, indexable by search engines, printable |
+| the Logseq look                        | =default=, =dark=, =nord= or your own CSS                  |
+| export from the app                    | one command, easy to run in a script or a CI               |
+
+Coming from =logseq-site-builder=, org-bloom's former name? See [[Coming-from-logseq-site-builder][Coming from logseq-site-builder]].

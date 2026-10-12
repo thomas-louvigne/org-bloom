@@ -1,0 +1,6 @@
+[site]
+title = "Jardin org-roam"
+lang = "fr"
+enable_journals = true
+rss = true
+base_url = "https://notes.example.com"

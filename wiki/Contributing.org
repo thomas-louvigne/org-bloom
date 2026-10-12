@@ -1,0 +1,16 @@
+* Tests
+
+#+BEGIN_SRC bash
+pip install -e ".[dev]"
+python3 -m pytest
+#+END_SRC
+
+* Editing this wiki
+
+The wiki is written in org-mode and lives in the =wiki/= folder of the repository, so it is reviewed and versioned with the code. Each =Page-name.org= file is a wiki page; =Home.org= is the front page, =_Sidebar.org= and =_Footer.org= are shown on every page. Links between pages use the file name without its extension: =[[Page-name][Label]]=.
+
+To publish it to the GitHub wiki (create the wiki's first page once from the GitHub web interface, so that its repository exists):
+
+#+BEGIN_SRC bash
+scripts/publish-wiki.sh
+#+END_SRC

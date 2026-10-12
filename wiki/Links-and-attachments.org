@@ -1,0 +1,25 @@
+* Links between pages
+
+| Syntax                           | Leads to                                                 |
+|----------------------------------+----------------------------------------------------------|
+| =[[Page]]=                       | the page named /Page/ (Logseq wiki link)                 |
+| =[[file:page.org]]=              | the page built from =page.org=                           |
+| =[[file:page.org::*Headline]]=   | a headline of that page                                  |
+| =[[id:2f0c…][Label]]=            | the page or headline with that =:ID:= (org-roam)         |
+| =[[*Headline]]=                  | a headline of the same page                              |
+| =[[#custom-id]]=                 | the headline with that =:CUSTOM_ID:=                     |
+
+=--check-links= lists every internal link that would 404 — see [[Checks-and-tools][Checks and tools]].
+
+* org-roam IDs
+
+org-roam links by ID: =[[id:2f0c…][Label]]= leads to the page whose file-level =:PROPERTIES:= drawer has that =:ID:=, or to the headline whose drawer has it. An ID that matches no published page is reported by =--check-links= and its label shown as plain text.
+
+* Images and attachments
+
+Images and attachments are copied into the site when a page links them:
+
+- Logseq style: =[[../assets/file.pdf]]=
+- org-mode style: =[[file:docs/guide.pdf]]=, files linked next to a page
+
+=--check-assets= lists the assets that no page references.

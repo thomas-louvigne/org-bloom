@@ -1,0 +1,64 @@
+*The org-mode static website-builder. Bloom your personal wiki and/or blog with vanilla emacs, logseq, org-mode or Orgamnesia.*
+
+📖 *Documentation: [[https://github.com/thomas-louvigne/org-bloom/wiki][the org-bloom wiki]]* (sources in [[file:wiki/Home.org][wiki/]])
+
+* 🌸 org-bloom
+
+org-bloom turns a folder of notes into a static website — HTML + CSS + vanilla JS, no server, no build framework. It reads Emacs org-mode folders, [[https://www.orgroam.com/][org-roam]] notes, [[https://logseq.com/][Logseq]] graphs (Org or Markdown) and [[https://github.com/thomas-louvigne/orgamnesia][Orgamnesia]] projects.
+
+[[file:docs/themes.png]]
+
+- wiki links, org links and org-roam IDs, images and attachments
+- blog and RSS from Logseq journals or org-roam dailies
+- tags, readable dates, authors
+- private notes with =#+PUBLIC= and =:noexport:=
+- themes (=default=, =dark=, =nord= or your own CSS), tree view, share & print bar
+- client-side full-text search
+
+Example: [[https://chroniques-insoumises.com/][chroniques-insoumises.com]], a Logseq knowledge base built with the =nord= theme.
+
+#+BEGIN_QUOTE
+📛 org-bloom was previously called =logseq-site-builder= — see [[https://github.com/thomas-louvigne/org-bloom/wiki/Coming-from-logseq-site-builder][Coming from logseq-site-builder]].
+
+🤖 Vibecoded — entirely generated through vibe coding with Claude. Readable and hackable, but still *early beta*: expect rough edges and breaking changes.
+#+END_QUOTE
+
+* Quick start
+
+Requires Python 3.11+ and [[https://pandoc.org/installing.html][pandoc]].
+
+#+BEGIN_SRC bash
+git clone https://github.com/thomas-louvigne/org-bloom.git
+cd org-bloom
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+#+END_SRC
+
+*Try it on a sample graph* shipped with the repository — an org-roam garden with ID links, a private note and two dailies:
+
+#+BEGIN_SRC bash
+org-bloom test-sites/04-org-roam-jardin /tmp/bloom-demo
+python3 -m http.server --directory /tmp/bloom-demo 8080   # → http://localhost:8080
+#+END_SRC
+
+=test-sites/= also holds three Logseq graphs, one per theme.
+
+*Then on your own notes* — two org files are enough:
+
+#+BEGIN_SRC bash
+mkdir -p ~/bloom-notes
+cat > ~/bloom-notes/index.org <<'EOF'
+,#+TITLE: Home
+
+Hello! Read [[file:first-note.org][my first note]].
+EOF
+cat > ~/bloom-notes/first-note.org <<'EOF'
+,#+TITLE: My first note
+,#+FILETAGS: :demo:
+
+Written in /org-mode/, published by org-bloom.
+EOF
+org-bloom ~/bloom-notes /tmp/bloom-notes-site
+#+END_SRC
+
+⚠️ The output folder is *wiped* before every build. The first build creates =org-bloom.toml= in your notes folder: every option is in [[file:org-bloom.example.toml][org-bloom.example.toml]] and in the [[https://github.com/thomas-louvigne/org-bloom/wiki/Configuration][Configuration]] page of the wiki. Coming from a given tool? See /Publish with/ [[https://github.com/thomas-louvigne/org-bloom/wiki/Publish-with-vanilla-Emacs][vanilla Emacs]], [[https://github.com/thomas-louvigne/org-bloom/wiki/Publish-with-org-roam][org-roam]], [[https://github.com/thomas-louvigne/org-bloom/wiki/Publish-with-Logseq][Logseq]] or [[https://github.com/thomas-louvigne/org-bloom/wiki/Publish-with-Orgamnesia][Orgamnesia]].

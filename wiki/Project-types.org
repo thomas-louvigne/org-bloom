@@ -1,0 +1,28 @@
+org-bloom looks for a =logseq/= folder at the root of the project.
+
+| | Logseq graph (has =logseq/=) | Org-mode project (Emacs, org-roam, Orgamnesia) |
+|-+------------------------------+------------------------------------------------|
+| Pages read | =.org= and =.md= in =pages/= | =.org= in =pages/= (or the folder itself), *subfolders included* — except hidden ones (=.trash=, =.git=…), =assets/=, the journals and the output folder |
+| Published | pages with =#+PUBLIC: true= (or =all_public = true=) | *every page*, except those with =#+PUBLIC: false= or =#+FILETAGS: :noexport:= (=all_public = false= restores the opt-in rule) |
+| =*= headlines | the deepest level becomes bullets, like Logseq (=org_listify_headings_from = "auto"=) | *real headings*, like an Emacs export (=org_listify_headings_from = false=) |
+| Title headline | kept | see below |
+| Blog date format | =journal_page_title_format= (=dd-MM-yyyy=) | written out in =lang= (=12 octobre 2026=) |
+
+Two pages with the same title in different subfolders get distinct URLs (the second one is named after its path).
+
+Logseq compatibility is kept: a Logseq graph builds the same pages as with =logseq-site-builder=, with tag pages and readable dates on top.
+
+* Title headline
+
+Every page of the site shows its title in large type at the top. Orgamnesia starts a new page =Élody.org= with the line =* Élody=, so that title would appear twice in a row. In an org-mode project, a first =* Headline= that only repeats the page name (or its =#+TITLE=) is therefore not shown; any other headline is kept.
+
+* Folders that are not read
+
+In an org-mode project, subfolders are read, except:
+
+- hidden folders, whose name starts with a dot: =.trash= (Orgamnesia and Logseq trash), =.git=, =.obsidian=…
+- =assets/= (files are copied only when a page links them) and =logseq/=;
+- the journals folder (=journals/= or =daily/=), read as the blog instead;
+- the output folder, when it sits inside the project.
+
+To leave out more folders or files, see [[Publishing-and-privacy][Publishing and privacy]].

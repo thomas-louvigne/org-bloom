@@ -1,0 +1,40 @@
+*The org-mode static website-builder. Bloom your personal wiki and/or blog with vanilla emacs, logseq, org-mode or Orgamnesia.*
+
+org-bloom turns a folder of notes into a static website — HTML + CSS + vanilla JS, no server, no build framework.
+
+| Works with      | What it reads                                                                                                          |
+|-----------------+------------------------------------------------------------------------------------------------------------------------|
+| *Emacs org-mode* | any folder of =.org= files, subfolders included: =#+TITLE=, =#+DATE=, =#+AUTHOR=, =#+FILETAGS=, headline tags, timestamps, =:noexport:=, =file:= links… |
+| *org-roam*      | =id:= links (file and headline IDs), =daily/= notes as blog posts                                                      |
+| *Logseq*        | graphs in Org *or Markdown*: wiki links, =#tags=, =tags::=, journals, =logseq/config.edn= settings                     |
+| *Orgamnesia*    | its projects as is, and its Export button (=org-bloom build <project>=)                                               |
+
+* Publish with…
+
+- [[Publish-with-vanilla-Emacs][Publish with vanilla Emacs]] — a folder of =.org= files, coming from org-publish
+- [[Publish-with-org-roam][Publish with org-roam]] — ID links, dailies as a blog
+- [[Publish-with-Logseq][Publish with Logseq]] — =config.edn= import, coming from Logseq publishing
+- [[Publish-with-Orgamnesia][Publish with Orgamnesia]] — the Export button
+
+* Getting started
+
+- [[Installation][Installation]] — requirements, install, first build, local preview
+- [[Configuration][Configuration]] — =org-bloom.toml=, Logseq settings import, command-line options
+
+* Writing your notes
+
+- [[Project-types][Project types]] — Logseq graph or org-mode project: what is read, what is published
+- [[Publishing-and-privacy][Publishing and privacy]] — =#+PUBLIC=, =noexport=, hidden folders
+- [[Links-and-attachments][Links and attachments]] — wiki links, org links, org-roam IDs, files
+- [[Blog-dates-and-authors][Blog, dates and authors]] — journals, dailies, RSS, timestamps
+- [[Tags][Tags]] — file tags, headline tags, tag pages
+
+* The generated site
+
+- [[Themes-and-layout][Themes and layout]] — themes, tree view, share & print bar, nav menu, random page, search
+- [[Checks-and-tools][Checks and tools]] — =--check-links=, =--check-assets=, =--zip=
+
+* Misc
+
+- [[Coming-from-logseq-site-builder][Coming from logseq-site-builder]] — org-bloom's former name
+- [[Contributing][Contributing]] — tests, editing this wiki

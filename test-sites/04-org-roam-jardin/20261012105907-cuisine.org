@@ -1,0 +1,16 @@
+:PROPERTIES:
+:ID:       3976c46b-49be-4e47-83c9-072414bc4e3e
+:END:
+#+title: Cuisine
+
+
+Quelques recettes.
+
+* Tarte aux pommes :dessert:
+:PROPERTIES:
+:ID:       9b78c27a-8458-41d1-a4a2-eb87bfc3775c
+:END:
+Des pommes, de la pâte.
+
+* Secret :noexport:
+Recette de grand-mère.
