@@ -8,7 +8,7 @@ org-bloom turns a folder of notes into a static website — HTML + CSS + vanilla
 
 [[file:docs/themes.png]]
 
-- wiki links, org links and org-roam IDs, images and attachments
+- wiki links, org links and org-roam IDs, images (sized and aligned with =#+ATTR_ORG=) and attachments
 - blog and RSS from Logseq journals or org-roam dailies
 - tags, readable dates, authors
 - private notes with =#+PUBLIC= and =:noexport:=
@@ -25,24 +25,30 @@ Example: [[https://chroniques-insoumises.com/][chroniques-insoumises.com]], a Lo
 
 * Quick start
 
-Requires Python 3.11+ and [[https://pandoc.org/installing.html][pandoc]] 3.8 or later (checked at startup).
+Requires Python 3.11+, [[https://pandoc.org/installing.html][pandoc]] 3.8 or later (a separate program, checked at startup) and git. The Python libraries (click, pypandoc, jinja2, beautifulsoup4) are installed automatically.
 
 #+BEGIN_SRC bash
-git clone https://github.com/thomas-louvigne/org-bloom.git
-cd org-bloom
-pipx install -e .      # installs the org-bloom command on your PATH
+sudo pacman -S --needed python pandoc-cli git    # Arch Linux
+sudo apt install python3 python3-venv git        # Debian/Ubuntu (+ pandoc ≥ 3.8 from https://github.com/jgm/pandoc/releases)
+brew install python pandoc git                   # macOS
 #+END_SRC
 
-No pipx? =sudo apt install pipx= (or =brew install pipx=), then =pipx ensurepath=. =pip install --user= fails on recent Linux distributions (=externally-managed-environment=) — see [[https://github.com/thomas-louvigne/org-bloom/wiki/Installation][Installation]] for the alternatives and the development setup.
-
-*Try it on a sample Logseq graph* shipped with the repository — Org and Markdown pages, journals turned into a blog, a private draft left out:
+*Try it in one line* — builds a sample Logseq graph shipped with the repository (Org and Markdown pages, journals turned into a blog, a private draft left out) and opens it in your browser:
 
 #+BEGIN_SRC bash
-org-bloom test-sites/01-carnet-tech-default /tmp/bloom-demo
-python3 -m http.server --directory /tmp/bloom-demo 8080   # → http://localhost:8080
+git clone https://github.com/thomas-louvigne/org-bloom.git && org-bloom/org-bloom demo
 #+END_SRC
 
-=test-sites/= also holds two more Logseq graphs (=dark= and =nord= themes) and an org-roam garden (=04-org-roam-jardin=).
+=org-bloom/org-bloom= is a launcher: its first run installs org-bloom into =org-bloom/.venv= (nothing outside the clone), then it takes the same arguments as the installed command — =org-bloom/org-bloom ~/my-notes ~/Sites/my-site=. Set =PORT= to serve the demo on another port than 8080. =test-sites/= also holds two more Logseq graphs (=dark= and =nord= themes) and an org-roam garden (=04-org-roam-jardin=).
+
+*Install the command* so that =org-bloom= works from anywhere, with [[https://pipx.pypa.io/][pipx]] (=python-pipx= on Arch, =pipx= on Debian/Ubuntu and Homebrew):
+
+#+BEGIN_SRC bash
+pipx ensurepath          # once, then open a new terminal
+pipx install -e ./org-bloom
+#+END_SRC
+
+=pip install --user= fails on recent Linux distributions (=externally-managed-environment=) — see [[https://github.com/thomas-louvigne/org-bloom/wiki/Installation][Installation]] for the alternatives and the development setup.
 
 *Then on your own notes* — two org files are enough:
 

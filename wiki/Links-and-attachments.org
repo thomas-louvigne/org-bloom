@@ -23,3 +23,40 @@ Images and attachments are copied into the site when a page links them:
 - org-mode style: =[[file:docs/guide.pdf]]=, files linked next to a page
 
 =--check-assets= lists the assets that no page references.
+
+* Image size and attributes
+
+In org pages, the way Emacs shows an image (=#+ATTR_ORG:=) is used on the site too:
+
+#+BEGIN_SRC org
+,#+CAPTION: The garden in May
+,#+ATTR_ORG: :width 600 :align center :alt A garden full of tulips
+[[file:assets/garden.jpg]]
+#+END_SRC
+
+| =#+ATTR_ORG= option      | On the site                                                        |
+|--------------------------+--------------------------------------------------------------------|
+| =:width 600= or =600px=  | 600 pixels wide                                                    |
+| =:width 50%=             | half the width of the text column                                  |
+| =:width 0.5=             | same as =50%= (org's fraction of the width)                        |
+| =:align center= / =right= | image centered / against the right edge (=left= is the default)    |
+| =:background "#ffffff"=  | background color behind a transparent image (=t= adds nothing)     |
+| =:alt Text=              | alternative text, read by screen readers and shown if it fails to load |
+| =:title Text=            | tooltip on hover                                                   |
+| =:height 300=            | height in pixels (with =:width=, the image may be distorted)       |
+| =:class name=, =:id name= | HTML class and id, for your own CSS                                |
+| =:style css=             | inline CSS, added to what =:align= and =:background= produce       |
+
+Values may contain spaces: a value runs up to the next =:option=. Several options go on one line, as above. Options that only mean something to Emacs are ignored.
+
+An image is never wider than the text column: a larger width is scaled down to fit, keeping its proportions. Without =:width=, an image shows at its natural size, within that same limit.
+
+=#+ATTR_HTML:= works too, with any HTML attribute. For an option set in both, =#+ATTR_HTML= wins — use it to show an image differently on the site and in Emacs:
+
+#+BEGIN_SRC org
+,#+ATTR_ORG: :width 900
+,#+ATTR_HTML: :width 400
+[[file:assets/schema.png]]
+#+END_SRC
+
+=:align= and =:background= become a =style=, so an =#+ATTR_HTML: :style= on the same image replaces them.

@@ -109,6 +109,12 @@ class TestLinkResolverOrg:
         result, _ = resolver.preprocess_org(content)
         assert "[[file:quetes.html][#quêtes]]" in result
 
+    def test_no_hashtag_in_keyword_lines(self, resolver):
+        content = '#+ATTR_ORG: :background "#ffd"\n[[file:a.png]] #photo\n'
+        result, _ = resolver.preprocess_org(content)
+        assert "background-color:#ffd" in result
+        assert "[[file:photo.html][#photo]]" in result
+
     def test_simple_link_with_dotted_name(self, resolver):
         content = "Parler à [[Dr. Livia Morozov]] pour plus d'infos."
         result, _ = resolver.preprocess_org(content)

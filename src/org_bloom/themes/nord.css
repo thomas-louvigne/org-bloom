@@ -546,6 +546,23 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
   margin-left: calc(var(--tree-radius) - var(--tree-spacing));
   padding-left: 0;
 }
+/* A list nested in an item already ends with that item's padding-bottom;
+   its own bottom margin would pile up at every level that closes at once,
+   leaving a blank line under the deepest item. */
+.tree-view .page-body li > details > ul,
+.tree-view .page-body li > details > ol {
+  margin-bottom: 0;
+}
+/* Paragraphs, images or code between a branch's heading and its first child
+   (grouped by html_transforms) carry the trunk on their left, pulled back
+   to the children's trunk x like a nested list. flow-root keeps their
+   margins inside the box, so the line has no gap. */
+.tree-view .page-body details > .tree-content {
+  display: flow-root;
+  margin-left: calc(var(--tree-radius) - var(--tree-spacing));
+  padding-left: calc(var(--tree-spacing) - var(--tree-radius) - 2px);
+  border-left: 2px solid var(--tree-line);
+}
 /* Nested heading sections only pull back (never touch padding-left — that
    stays the item's own universal marker gutter, set above; it lives in the
    same <details> as this node's own <summary>, so zeroing it here would
@@ -564,8 +581,8 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
 .tree-view .page-body details > section {
   border-left: 2px solid var(--tree-line);
 }
-.tree-view .page-body details > ul:not(:has(~ section)) > li:last-child,
-.tree-view .page-body details > ol:not(:has(~ section)) > li:last-child,
+.tree-view .page-body details > ul:not(:has(~ section, ~ ul, ~ ol)) > li:last-child,
+.tree-view .page-body details > ol:not(:has(~ section, ~ ul, ~ ol)) > li:last-child,
 .tree-view .page-body details > section:last-child {
   border-color: transparent;
 }
@@ -575,12 +592,12 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
    the branch then: keep its trunk (above) and move the list's bottom
    margin into that item's padding, which its border does cover — a margin
    would leave a gap in the trunk before the next section. */
-.tree-view .page-body details > ul:has(~ section),
-.tree-view .page-body details > ol:has(~ section) {
+.tree-view .page-body details > ul:has(~ section, ~ ul, ~ ol, ~ .tree-content),
+.tree-view .page-body details > ol:has(~ section, ~ ul, ~ ol, ~ .tree-content) {
   margin-bottom: 0;
 }
-.tree-view .page-body details > ul:has(~ section) > li:last-child,
-.tree-view .page-body details > ol:has(~ section) > li:last-child {
+.tree-view .page-body details > ul:has(~ section, ~ ul, ~ ol, ~ .tree-content) > li:last-child,
+.tree-view .page-body details > ol:has(~ section, ~ ul, ~ ol, ~ .tree-content) > li:last-child {
   padding-bottom: 0.75em;
 }
 .tree-view .page-body details > ul > li::before,
@@ -634,6 +651,8 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
   z-index: 1;
   background-image: var(--tree-expand-icon);
   background-repeat: no-repeat;
+  /* The icon is a 2:1 strip (+ then -), scaled to the marker's size. */
+  background-size: calc(4 * var(--tree-radius)) calc(2 * var(--tree-radius));
   background-position: 0 0;
 }
 .tree-view .page-body li > details[open] > summary::before,
@@ -641,7 +660,7 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
 .tree-view .page-body section.level2 > details[open] > summary::before,
 .tree-view .page-body section.level3 > details[open] > summary::before,
 .tree-view .page-body section.level4 > details[open] > summary::before {
-  background-position: -1rem 0;
+  background-position: calc(-2 * var(--tree-radius)) 0;
 }
 /* A collapsed branch hides content, so its button gets a colored marker —
    otherwise a folded list looks identical to an empty leaf from a glance. */
@@ -704,7 +723,9 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
   background-color: var(--tree-line-hover);
 }
 .tree-view .page-body li:hover > details > summary::after,
-.tree-view .page-body section:hover > details > summary::after {
+.tree-view .page-body section:hover > details > summary::after,
+.tree-view .page-body li:hover > details > .tree-content,
+.tree-view .page-body section:hover > details > .tree-content {
   border-left-color: var(--tree-line-hover);
 }
 /* No border: a bordered box in this shade reads as a disabled form

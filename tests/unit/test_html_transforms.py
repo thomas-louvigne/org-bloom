@@ -1,6 +1,11 @@
 from bs4 import BeautifulSoup
 
-from org_bloom.services.html_transforms import add_collapsible_tree, auto_listify, sections_to_lists
+from org_bloom.services.html_transforms import (
+    add_collapsible_tree,
+    auto_listify,
+    figure_attrs_to_img,
+    sections_to_lists,
+)
 
 
 class TestSectionsToLists:
@@ -193,6 +198,38 @@ class TestAddCollapsibleTree:
         details = parent_li.find("details", recursive=False)
         assert details is not None
         assert details.find("li", id="d") is not None
+
+    def test_blocks_before_a_child_are_grouped_for_the_trunk(self):
+        html = (
+            '<section class="level1" id="a"><h1>A</h1>'
+            "<p>Intro</p><figure><img src='x.png'></figure>"
+            '<section class="level2" id="b"><h2>B</h2></section>'
+            "<p>After</p>"
+            "</section>"
+        )
+        result = add_collapsible_tree(html)
+        details = BeautifulSoup(result, "html.parser").find("details")
+        children = [c for c in details.children if getattr(c, "name", None)]
+        assert [c.name for c in children] == ["summary", "div", "section", "p"]
+        assert children[1]["class"] == ["tree-content"]
+        assert [c.name for c in children[1].children] == ["p", "figure"]
+        assert children[3].get_text() == "After"
+
+    def test_no_group_when_a_child_comes_right_after_the_heading(self):
+        html = '<section class="level1" id="a"><h1>A</h1>\n<section class="level2" id="b"><h2>B</h2></section></section>'
+        assert "tree-content" not in add_collapsible_tree(html)
+
+
+class TestFigureAttrsToImg:
+    def test_width_moves_from_figure_to_img(self):
+        html = '<figure id="f" width="981"><img src="a.png"/><figcaption>Cap</figcaption></figure>'
+        soup = BeautifulSoup(figure_attrs_to_img(html), "html.parser")
+        assert soup.figure.attrs == {"id": "f"}
+        assert soup.img["width"] == "981"
+
+    def test_img_own_attribute_wins(self):
+        html = '<figure alt="fig"><img src="a.png" alt="img"/></figure>'
+        assert BeautifulSoup(figure_attrs_to_img(html), "html.parser").img["alt"] == "img"
 
 
 class TestFormatTimestamps:

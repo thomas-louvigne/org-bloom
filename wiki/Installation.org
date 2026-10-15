@@ -1,15 +1,82 @@
 * Requirements
 
-- Python 3.11+
-- [[https://pandoc.org/installing.html][pandoc]] 3.8 or later — org-bloom checks it at startup and stops with an error if it is missing or older. Distribution packages often lag behind (Debian 12 and Ubuntu 24.04 ship 2.x/3.1): install the =.deb= or tarball from [[https://github.com/jgm/pandoc/releases][pandoc releases]].
+** System dependencies (install them yourself)
+
+| Dependency | Version     | Needed for                                     | Check with         |
+|------------+-------------+------------------------------------------------+--------------------|
+| Python     | 3.11+       | running org-bloom (=tomllib= is 3.11+)          | =python3 --version= |
+| [[https://pandoc.org/installing.html][pandoc]]     | 3.8+        | converting Org and Markdown pages to HTML      | =pandoc --version=  |
+| git        | any         | cloning the repository                         | =git --version=     |
+| [[https://pipx.pypa.io/][pipx]]       | any         | installing the =org-bloom= command (recommended) | =pipx --version=    |
+
+pandoc is a separate program, not a Python package: org-bloom calls it through =pypandoc= and checks its version at startup — it stops with an error if pandoc is missing or older than 3.8 (3.8 introduced the =--syntax-highlighting= option org-bloom passes). Distribution packages often lag behind: Debian 12 and Ubuntu 24.04 ship 2.x/3.1, too old. In that case install the =.deb= or the tarball from [[https://github.com/jgm/pandoc/releases][pandoc releases]] (e.g. =sudo apt install ./pandoc-3.8-1-amd64.deb=).
+
+** Python dependencies (installed automatically)
+
+pipx or pip installs these from =pyproject.toml=, you do not need to install them by hand:
+
+- [[https://click.palletsprojects.com/][click]] ≥ 8.1 — command line
+- [[https://github.com/JessicaTegner/pypandoc][pypandoc]] ≥ 1.13 — calls the pandoc program (it does *not* bundle pandoc)
+- [[https://jinja.palletsprojects.com/][jinja2]] ≥ 3.1 — HTML templates
+- [[https://www.crummy.com/software/BeautifulSoup/][beautifulsoup4]] ≥ 4.12 — HTML post-processing (links, tags, table of contents)
+
+Development only (=pip install -e ".[dev]"=): pytest ≥ 7.4, pytest-cov ≥ 4.1.
+
+** Optional
+
+- =notify-send= (package =libnotify= / =libnotify-bin=) — a desktop notification when a build ends. Without it org-bloom just skips the notification.
+- Emacs — only to regenerate the org-roam test graph (=scripts/make-org-roam-test-site.el=); not needed to use org-bloom.
+
+** Installing the system dependencies
+
+*Arch Linux* (and Manjaro, EndeavourOS, CachyOS…) — the official repositories carry a recent pandoc (=pandoc-cli=, 3.x), nothing else to download:
+
+#+BEGIN_SRC bash
+sudo pacman -S --needed python pandoc-cli git python-pipx
+#+END_SRC
+
+*Debian / Ubuntu*:
+
+#+BEGIN_SRC bash
+sudo apt install python3 python3-venv git pipx
+pandoc --version   # if missing or < 3.8: install the .deb from https://github.com/jgm/pandoc/releases
+#+END_SRC
+
+*Fedora*:
+
+#+BEGIN_SRC bash
+sudo dnf install python3 git pipx pandoc
+pandoc --version   # if < 3.8: use the tarball from https://github.com/jgm/pandoc/releases
+#+END_SRC
+
+*macOS* ([[https://brew.sh/][Homebrew]]):
+
+#+BEGIN_SRC bash
+brew install python pandoc git pipx
+#+END_SRC
+
+* Try without installing
+
+Once the system dependencies are there (pipx is not needed for this), one line clones the repository, builds a sample site and opens it in the browser:
+
+#+BEGIN_SRC bash
+git clone https://github.com/thomas-louvigne/org-bloom.git && org-bloom/org-bloom demo
+#+END_SRC
+
+The =org-bloom= script at the root of the repository is a launcher. Its first run creates =.venv/= inside the clone and installs org-bloom there (again whenever =pyproject.toml= changes); nothing is written outside the clone except the demo site, built in =/tmp/org-bloom-demo=. =demo= builds =test-sites/01-carnet-tech-default= and serves it on http://localhost:8080 (=PORT=9000 org-bloom/org-bloom demo= for another port); Ctrl+C stops it. Any other arguments are passed to org-bloom:
+
+#+BEGIN_SRC bash
+org-bloom/org-bloom ~/my-notes ~/Sites/my-site
+#+END_SRC
+
+You can link it into your =PATH= (=ln -s "$PWD/org-bloom/org-bloom" ~/.local/bin/org-bloom=) instead of installing with pipx.
 
 * Install as a command (recommended)
 
-The easiest way to get an =org-bloom= command available everywhere, without activating anything, is [[https://pipx.pypa.io/][pipx]]: it installs org-bloom in its own virtual environment and puts the executable on your =PATH=.
+The easiest way to get an =org-bloom= command available everywhere, without activating anything, is [[https://pipx.pypa.io/][pipx]]: it installs org-bloom and its Python dependencies in its own virtual environment and puts the executable on your =PATH=. Install the [[*Installing the system dependencies][system dependencies]] first (pipx included), then:
 
 #+BEGIN_SRC bash
-sudo apt install pipx        # Debian/Ubuntu — or: brew install pipx, or: python3 -m pip install --user pipx
-pipx ensurepath              # adds ~/.local/bin to PATH (open a new terminal afterwards)
+pipx ensurepath           # adds ~/.local/bin to PATH (open a new terminal afterwards)
 
 git clone https://github.com/thomas-louvigne/org-bloom.git
 pipx install -e ./org-bloom  # -e: changes to the sources apply without reinstalling
@@ -20,7 +87,7 @@ Update with =git pull= (the =-e= install follows the sources); run =pipx reinsta
 
 ** Why not =pip install --user=?
 
-On recent Debian, Ubuntu and Fedora, =pip install --user= fails with =error: externally-managed-environment= ([[https://peps.python.org/pep-0668/][PEP 668]]): the system Python refuses packages that apt does not manage. Use pipx, or the virtual environment below — not =--break-system-packages=.
+On recent Arch Linux, Debian, Ubuntu and Fedora, =pip install --user= fails with =error: externally-managed-environment= ([[https://peps.python.org/pep-0668/][PEP 668]]): the system Python refuses packages that apt does not manage. Use pipx, or the virtual environment below — not =--break-system-packages=.
 
 ** Without pipx: venv + symlink
 
@@ -34,6 +101,24 @@ ln -sf "$PWD/.venv/bin/org-bloom" ~/.local/bin/org-bloom
 #+END_SRC
 
 =~/.local/bin= must be on your =PATH= (it is by default on most Linux distributions; otherwise add =export PATH="$HOME/.local/bin:$PATH"= to your =~/.bashrc= or =~/.zshrc=).
+
+** Arch Linux: Python dependencies from pacman
+
+On Arch you can take the Python libraries from the official repositories too, so that =pacman -Syu= updates them, and only install org-bloom itself in a virtual environment that sees the system packages:
+
+#+BEGIN_SRC bash
+sudo pacman -S --needed python pandoc-cli git \
+    python-click python-pypandoc python-jinja python-beautifulsoup4
+
+git clone https://github.com/thomas-louvigne/org-bloom.git
+cd org-bloom
+python -m venv --system-site-packages .venv
+.venv/bin/pip install --no-deps -e .   # --no-deps: use the pacman packages above
+mkdir -p ~/.local/bin
+ln -sf "$PWD/.venv/bin/org-bloom" ~/.local/bin/org-bloom
+#+END_SRC
+
+For development, add =python-pytest python-pytest-cov= to the =pacman= line. After a major Python upgrade (e.g. 3.14 → 3.15), recreate the =.venv= (=rm -rf .venv= and run the last four commands again). Optional: =sudo pacman -S libnotify= for the end-of-build notification.
 
 * Install for development
 

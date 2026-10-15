@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..domain.org_syntax import headline_anchors, pandoc_anchor, property_anchors
+from ..domain.org_syntax import attr_org_to_html, headline_anchors, pandoc_anchor, property_anchors
 from ..domain.page import Page, PageFormat
 from ..domain.paths import is_image, slugify
 
@@ -32,6 +32,7 @@ _HASHTAG_COMPOUND = re.compile(r"#\[\[([^\]]+)\]\]")
 # Matches #word hashtags — excludes #+directives, #[[compound]] (handled separately),
 # and labels already inside generated links (preceded by [ in org ][#tag] or md [#tag]).
 _HASHTAG_SIMPLE = re.compile(r"(?<![a-zA-Z0-9_\[])#([^\W\d_][\w-]*)")
+_KEYWORD_LINE = re.compile(r"[ \t]*#\+\w+:")
 _PROPERTIES_BLOCK = re.compile(r":PROPERTIES:.*?:END:", re.DOTALL)
 _LOGBOOK_BLOCK = re.compile(r":LOGBOOK:.*?:END:", re.DOTALL)
 _MD_PROPERTIES_BLOCK = re.compile(r"^(?:[a-z][a-z0-9_-]*::[^\n]*\n?)+", re.IGNORECASE)
@@ -47,7 +48,7 @@ def _clean_org(content: str) -> str:
         _PROPERTIES_BLOCK, _LOGBOOK_BLOCK, _EMPTY_HEADING,
     ):
         content = pattern.sub("", content)
-    return content
+    return attr_org_to_html(content)
 
 
 def _clean_md(content: str) -> str:
@@ -293,6 +294,13 @@ class LinkResolver:
         content = _SIMPLE_LINK.sub(replace_simple, content)
 
         # _HASHTAG_SIMPLE last: #word has no overlap with [[...]] syntax.
-        content = _HASHTAG_SIMPLE.sub(lambda m: page_link(m.group(1), f"#{m.group(1)}"), content)
+        # #+KEYWORD lines are skipped: a color like #ffd in #+ATTR_HTML is no tag.
+        def hashtag(m: re.Match) -> str:
+            return page_link(m.group(1), f"#{m.group(1)}")
+
+        content = "".join(
+            line if _KEYWORD_LINE.match(line) else _HASHTAG_SIMPLE.sub(hashtag, line)
+            for line in content.splitlines(keepends=True)
+        )
 
         return content, assets

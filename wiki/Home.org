@@ -25,7 +25,7 @@ org-bloom turns a folder of notes into a static website — HTML + CSS + vanilla
 
 - [[Project-types][Project types]] — Logseq graph or org-mode project: what is read, what is published
 - [[Publishing-and-privacy][Publishing and privacy]] — =#+PUBLIC=, =noexport=, hidden folders
-- [[Links-and-attachments][Links and attachments]] — wiki links, org links, org-roam IDs, files
+- [[Links-and-attachments][Links and attachments]] — wiki links, org links, org-roam IDs, files, image size (=#+ATTR_ORG=)
 - [[Blog-dates-and-authors][Blog, dates and authors]] — journals, dailies, RSS, timestamps
 - [[Tags][Tags]] — file tags, headline tags, tag pages
 

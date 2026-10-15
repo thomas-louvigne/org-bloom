@@ -24,6 +24,7 @@ def postprocess(html: str, fmt: PageFormat, config: SiteConfig) -> str:
         html = add_collapsible_tree(html)
     if fmt == "org":
         html = link_headline_tags(html)
+        html = figure_attrs_to_img(html)
     html = format_timestamps(html, config.lang)
     return add_download_to_asset_links(html)
 
@@ -110,6 +111,26 @@ def add_download_to_asset_links(html: str) -> str:
         return tag[:-1] + " download>"
 
     return re.sub(r"<a\b[^>]*>", add_download, html)
+
+
+# ── Images ───────────────────────────────────────────────────────────────────
+
+
+def figure_attrs_to_img(html: str) -> str:
+    """Pandoc puts the #+ATTR_HTML of a captioned org image (:width, :alt…) on
+    the <figure> instead of its <img>, where a width does nothing. Move them
+    onto the image; id and class stay on the figure."""
+    if "<figure " not in html:
+        return html
+    soup = BeautifulSoup(html, "html.parser")
+    for figure in soup.find_all("figure"):
+        img = figure.find("img")
+        if img is None:
+            continue
+        for name in [n for n in figure.attrs if n not in ("id", "class")]:
+            img.attrs.setdefault(name, figure[name])
+            del figure[name]
+    return str(soup)
 
 
 # ── Section helpers ──────────────────────────────────────────────────────────
@@ -273,9 +294,36 @@ def _wrap_as_details(soup: BeautifulSoup, summary_nodes: list, rest_nodes: list)
     for node in summary_nodes:
         summary.append(node)
     details.append(summary)
-    for node in rest_nodes:
+    for node in _group_tree_content(soup, rest_nodes):
         details.append(node)
     return details
+
+
+def _is_tree_node(node: object) -> bool:
+    return isinstance(node, Tag) and (node.name in ("ul", "ol") or _section_level(node) is not None)
+
+
+def _group_tree_content(soup: BeautifulSoup, nodes: list) -> list:
+    """Wrap each run of plain blocks (paragraph, image, code…) that sits
+    before a nested list or section in a <div class="tree-content">, so the
+    tree view can draw the trunk along it: without a box of its own, the line
+    from the parent's marker would stop at the heading and only resume at the
+    first child. Blocks after the last child need no trunk and stay as is."""
+    grouped, run = [], []
+    for node in nodes:
+        if not _is_tree_node(node):
+            run.append(node)
+            continue
+        if any(isinstance(n, Tag) or str(n).strip() for n in run):
+            wrapper = soup.new_tag("div", attrs={"class": "tree-content"})
+            for block in run:
+                wrapper.append(block)
+            grouped.append(wrapper)
+        else:
+            grouped.extend(run)
+        grouped.append(node)
+        run = []
+    return grouped + run
 
 
 def _make_collapsible(soup: BeautifulSoup, node: object) -> None:

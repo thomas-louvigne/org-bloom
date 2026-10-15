@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Run org-bloom straight from a clone, without installing anything first.
+#
+#   ./org-bloom demo                      build a sample site and open it in the browser
+#   ./org-bloom ~/my-notes ~/Sites/site   same arguments as the installed org-bloom command
+#
+# The first run creates .venv/ next to this script and installs org-bloom into it
+# (again whenever pyproject.toml changes). pandoc 3.8+ must be installed: org-bloom
+# checks it at startup. See wiki/Installation.org.
+set -euo pipefail
+
+repo="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+venv="$repo/.venv"
+stamp="$venv/.org-bloom-installed"
+
+die() { echo "Error: $*" >&2; exit 1; }
+
+find_python() {
+    local candidate
+    for candidate in python3 python; do
+        if command -v "$candidate" >/dev/null &&
+            "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null; then
+            echo "$candidate"
+            return
+        fi
+    done
+    die "Python 3.11 or later not found. Install it (Arch: sudo pacman -S python, Debian/Ubuntu: sudo apt install python3 python3-venv)."
+}
+
+bootstrap() {
+    if [[ -x "$venv/bin/org-bloom" && -f "$stamp" && ! "$repo/pyproject.toml" -nt "$stamp" ]]; then
+        return
+    fi
+    local python
+    python="$(find_python)"
+    echo "First run: installing org-bloom into $venv ..." >&2
+    if [[ ! -x "$venv/bin/python" ]]; then
+        "$python" -m venv "$venv" ||
+            die "could not create $venv (Debian/Ubuntu: sudo apt install python3-venv)."
+    fi
+    "$venv/bin/python" -m pip install --quiet --disable-pip-version-check -e "$repo"
+    touch "$stamp"
+}
+
+demo() {
+    local out="${TMPDIR:-/tmp}/org-bloom-demo"
+    local port="${PORT:-8080}"
+    "$venv/bin/org-bloom" "$repo/test-sites/01-carnet-tech-default" "$out"
+    local url="http://localhost:$port"
+    echo
+    echo "Demo site: $url  (Ctrl+C to stop)"
+    if command -v xdg-open >/dev/null; then
+        (sleep 1; xdg-open "$url" >/dev/null 2>&1) &
+    elif command -v open >/dev/null; then
+        (sleep 1; open "$url") &
+    fi
+    exec "$venv/bin/python" -m http.server --bind 127.0.0.1 --directory "$out" "$port"
+}
+
+bootstrap
+# "demo" means the sample site, unless a folder of that name is meant.
+if [[ "${1:-}" == "demo" && $# -eq 1 && ! -d demo ]]; then
+    demo
+fi
+exec "$venv/bin/org-bloom" "$@"
