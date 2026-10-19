@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from ..domain.page import Page, SiteConfig
-from ..domain.paths import slugify
+from ..domain.paths import slugify, static_site_folders
 from ..ports.interfaces import ContentConverter, PageRepository, SiteWriter
 from .html_transforms import postprocess
 from .link_resolver import LinkResolver
@@ -62,7 +62,11 @@ class SiteBuilder:
             link_targets,
             config.home_slug,
             root=source_dir,
-            static_dirs=[source_dir / d for d in config.external_static_dirs],
+            static_dirs=[
+                folder
+                for external_dir in config.external_static_dirs
+                for folder in static_site_folders(source_dir / external_dir)
+            ],
             html_links=config.external_deps,
         )
         # Each page's pandoc conversion is an independent subprocess call, so
@@ -113,7 +117,7 @@ class SiteBuilder:
         if config.external_deps:
             writer.copy_pages_subdirs(source_dir / config.pages_directory)
             for external_dir in config.external_static_dirs:
-                writer.copy_pages_subdirs(source_dir / external_dir, require_web_files=False)
+                writer.copy_static_folders(static_site_folders(source_dir / external_dir))
 
         writer.write_sitemap(pages, journal_pages, config)
         writer.write_robots(config)

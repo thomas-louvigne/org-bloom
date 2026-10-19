@@ -68,20 +68,27 @@ journals_directory = "journals"
 
 # ── External static sites ────────────────────────────────────────────────────
 # Mini static sites that live in their own repo/folder, outside this Logseq
-# project (e.g. something versioned separately). Every immediate subdirectory
-# of `path` is copied as-is to the root of the generated site — same
-# mechanism as the "Custom HTML/CSS pages" feature for subdirs of pages/,
-# just sourced from outside the project. This makes it easy to link to them
-# from Logseq with a normal relative link, since the output layout is the
-# same either way.
+# project (e.g. something versioned separately), copied as-is to the root of
+# the generated site — same mechanism as the "Custom HTML/CSS pages" feature
+# for subdirs of pages/, just sourced from outside the project. This makes it
+# easy to link to them with a normal relative link, since the output layout is
+# the same either way.
+#
+# - `path` is a mini-site (an index.html at its top): it is copied as
+#   /<folder name>/, e.g. .../city-map → city-map/index.html.
+# - Otherwise every immediate subdirectory of `path` is copied, each as
+#   /<subfolder name>/. Everything in them goes public: point at the
+#   mini-sites one by one if the folder also holds private files.
+#
+# Hidden files and folders (.git, .DS_Store…) are never copied.
 #
 # One [[external_static_dirs]] block per external folder:
 #
 # [[external_static_dirs]]
-# path = "/home/you/repo/my-external-project"
+# path = "/home/you/repo/city-map"
 #
 # [[external_static_dirs]]
-# path = "/home/you/repo/another-project"
+# path = "/home/you/repo/my-mini-sites"
 #
 # A relative path is read from the project. On a computer that lacks one of
 # these folders (or a pages/ subfolder), links to its HTML pages lead to

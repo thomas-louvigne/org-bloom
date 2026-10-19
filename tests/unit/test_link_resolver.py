@@ -16,8 +16,8 @@ def resolver():
     pages = [
         _make_page("Accueil", "accueil"),
         _make_page("Dragons"),
-        _make_page("Gustave Coste", "gustave-coste"),
-        _make_page("Époque Tracogna"),
+        _make_page("Marie Curie", "marie-curie"),
+        _make_page("Époque Médiévale"),
     ]
     return LinkResolver(pages, home_slug="accueil")
 
@@ -27,7 +27,7 @@ class TestSlugify:
         assert slugify("Hello World") == "hello-world"
 
     def test_accented(self):
-        assert slugify("Époque Tracogna") == "epoque-tracogna"
+        assert slugify("Époque Médiévale") == "epoque-medievale"
 
     def test_multiple_spaces(self):
         assert slugify("A  B   C") == "a-b-c"
@@ -54,9 +54,9 @@ class TestLinkResolverOrg:
         assert "[[file:index.html][Accueil]]" in result
 
     def test_labeled_link(self, resolver):
-        content = "See [[Gustave Coste][le forgeron]]."
+        content = "See [[Marie Curie][la chimiste]]."
         result, _ = resolver.preprocess_org(content)
-        assert "[[file:gustave-coste.html][le forgeron]]" in result
+        assert "[[file:marie-curie.html][la chimiste]]" in result
 
     def test_url_link_preserved(self, resolver):
         content = "Visit [[https://example.com]]."
@@ -149,19 +149,19 @@ class TestBrokenLinks:
         assert resolver.broken_links == [("Dragons", "Nowhere"), ("Accueil", "Elsewhere")]
 
     def test_uppercase_variant_not_flagged(self, resolver):
-        resolver.preprocess_org("See [[GUSTAVE COSTE]].", source="Dragons")
+        resolver.preprocess_org("See [[MARIE CURIE]].", source="Dragons")
         assert resolver.broken_links == []
 
     def test_dash_variant_not_flagged(self, resolver):
-        resolver.preprocess_org("See [[Gustave-Coste]].", source="Dragons")
+        resolver.preprocess_org("See [[Marie-Curie]].", source="Dragons")
         assert resolver.broken_links == []
 
     def test_accent_and_separator_variant_not_flagged(self, resolver):
-        resolver.preprocess_org("See [[Époque-Tracogna]].", source="Dragons")
+        resolver.preprocess_org("See [[Époque-Médiévale]].", source="Dragons")
         assert resolver.broken_links == []
 
     def test_missing_accent_variant_not_flagged(self, resolver):
-        resolver.preprocess_org("See [[epoque tracogna]].", source="Dragons")
+        resolver.preprocess_org("See [[epoque medievale]].", source="Dragons")
         assert resolver.broken_links == []
 
 
@@ -178,13 +178,13 @@ class TestLinkResolverMd:
         assert "[Accueil](index.html)" in result
 
     def test_labeled_link(self, resolver):
-        result, _ = resolver.preprocess_md("See [[Gustave Coste][le forgeron]].")
-        assert "[le forgeron](gustave-coste.html)" in result
+        result, _ = resolver.preprocess_md("See [[Marie Curie][la chimiste]].")
+        assert "[la chimiste](marie-curie.html)" in result
 
     def test_hashtags(self, resolver):
-        result, _ = resolver.preprocess_md("#Dragons and #[[Gustave Coste]]")
+        result, _ = resolver.preprocess_md("#Dragons and #[[Marie Curie]]")
         assert "[#Dragons](dragons.html)" in result
-        assert "[#Gustave Coste](gustave-coste.html)" in result
+        assert "[#Marie Curie](marie-curie.html)" in result
 
     def test_bare_url(self, resolver):
         result, _ = resolver.preprocess_md("Visit [[https://example.com]].")
@@ -288,9 +288,19 @@ class TestOrgLinks:
         outside = tmp_path_factory.mktemp("statics")
         (outside / "plan").mkdir()
         (outside / "plan" / "index.html").write_text("<p>plan</p>", encoding="utf-8")
-        resolver, here = self._resolver(project, static_dirs=[outside])
+        resolver, here = self._resolver(project, static_dirs=[outside / "plan"])
         result, _ = resolver.preprocess("[[file:plan/index.html][le plan]]", "org", page=here)
         assert "[[file:plan/index.html][le plan]]" in result
+
+    def test_html_page_outside_the_static_folder_name_leads_to_404(self, project, tmp_path_factory):
+        outside = tmp_path_factory.mktemp("statics")
+        (outside / "plan").mkdir()
+        (outside / "plan" / "index.html").write_text("<p>plan</p>", encoding="utf-8")
+        (outside / "autre").mkdir()
+        (outside / "autre" / "index.html").write_text("<p>autre</p>", encoding="utf-8")
+        resolver, here = self._resolver(project, static_dirs=[outside / "plan"])
+        result, _ = resolver.preprocess("[[file:autre/index.html][autre]]", "org", page=here)
+        assert "[[file:404.html][autre]]" in result
 
     def test_missing_html_page_leads_to_404(self, project):
         resolver, here = self._resolver(project)

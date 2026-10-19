@@ -201,13 +201,42 @@ class TestSiteBuilder:
 
     def test_copies_external_static_dir(self, source_dir, output_dir, tmp_path):
         external = tmp_path / "external"
-        (external / "lugny").mkdir(parents=True)
-        (external / "lugny" / "map.svg").write_text("<svg></svg>", encoding="utf-8")
+        (external / "carte").mkdir(parents=True)
+        (external / "carte" / "map.svg").write_text("<svg></svg>", encoding="utf-8")
 
         config = SiteConfig(title="Mon Site", home_slug="accueil", external_static_dirs=[str(external)])
         build(source_dir, output_dir, config)
 
-        assert (output_dir / "lugny" / "map.svg").exists()
+        assert (output_dir / "carte" / "map.svg").exists()
+
+    def test_copies_an_external_mini_site_as_its_own_folder(self, source_dir, output_dir, tmp_path):
+        plan = tmp_path / "repo" / "city-map"
+        (plan / "src").mkdir(parents=True)
+        (plan / "index.html").write_text("<p>plan</p>", encoding="utf-8")
+        (plan / "src" / "scene.js").write_text("", encoding="utf-8")
+        (plan / ".git").mkdir()
+        (plan / ".git" / "HEAD").write_text("ref", encoding="utf-8")
+
+        config = SiteConfig(title="Mon Site", home_slug="accueil", external_static_dirs=[str(plan)])
+        build(source_dir, output_dir, config)
+
+        assert (output_dir / "city-map" / "index.html").exists()
+        assert (output_dir / "city-map" / "src" / "scene.js").exists()
+        assert not (output_dir / "city-map" / ".git").exists()
+        assert not (output_dir / "src").exists()
+
+    def test_external_static_dir_skips_hidden_folders(self, source_dir, output_dir, tmp_path):
+        external = tmp_path / "external"
+        (external / "carte" / ".git").mkdir(parents=True)
+        (external / "carte" / "map.svg").write_text("<svg></svg>", encoding="utf-8")
+        (external / ".cache").mkdir()
+
+        config = SiteConfig(title="Mon Site", home_slug="accueil", external_static_dirs=[str(external)])
+        build(source_dir, output_dir, config)
+
+        assert (output_dir / "carte" / "map.svg").exists()
+        assert not (output_dir / "carte" / ".git").exists()
+        assert not (output_dir / ".cache").exists()
 
     def test_raises_on_no_public_pages(self, tmp_path):
         pages = tmp_path / "pages"

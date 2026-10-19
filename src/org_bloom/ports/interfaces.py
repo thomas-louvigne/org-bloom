@@ -44,7 +44,10 @@ class SiteWriter(ABC):
     def write_404(self, config: SiteConfig) -> None:
         ...
 
-    def copy_pages_subdirs(self, pages_dir: Path, require_web_files: bool = True) -> None:
+    def copy_pages_subdirs(self, pages_dir: Path) -> None:
+        ...
+
+    def copy_static_folders(self, folders: list[Path]) -> None:
         ...
 
     @abstractmethod

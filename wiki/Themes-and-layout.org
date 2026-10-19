@@ -34,7 +34,12 @@ Full-text search runs in the browser (Fuse.js): no server needed.
 * Custom pages and external sites
 
 - *Custom HTML/CSS pages* are copied as-is (embeds, mini-apps, slide decks…).
-- *External static sites* — mini-sites that live outside the project — are copied in with =[[external_static_dirs]]= (a relative =path= is read from the project).
+- *External static sites* — mini-sites that live outside the project — are copied in with =[[external_static_dirs]]= (a relative =path= is read from the project). A =path= with an =index.html= at its top is one mini-site, copied as =/<folder name>/=; any other =path= has each of its subfolders copied, all of their content included. Hidden files (=.git=…) are never copied.
+
+#+BEGIN_SRC toml
+[[external_static_dirs]]
+path = "../assets/city-map"   # → city-map/index.html
+#+END_SRC
 
 Link them like any file: =[[file:plan/index.html][Voir le plan]]=.
 
@@ -44,7 +49,7 @@ A mini-site may live on one computer only (a heavy 3D map, a folder that is not 
 
 #+BEGIN_EXAMPLE
 Warning: 1 linked HTML page(s) not found, linked to 404.html instead:
-  plan/index.html  (from Lugny, 4Serpents)
+  plan/index.html  (from Paris, Lyon)
 #+END_EXAMPLE
 
 =--no-external-deps= does it on purpose, even where the folders exist: neither the =[[external_static_dirs]]= nor the =pages/= subfolders holding HTML are copied, and every link to them leads to =404.html=. HTML files in =assets/= are attachments and stay.

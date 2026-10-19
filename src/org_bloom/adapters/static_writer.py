@@ -81,7 +81,7 @@ class StaticWriter(SiteWriter):
     def write_404(self, config: SiteConfig) -> None:
         self._render("404.html", "404.html", config=config)
 
-    def copy_pages_subdirs(self, pages_dir: Path, require_web_files: bool = True) -> None:
+    def copy_pages_subdirs(self, pages_dir: Path) -> None:
         if not pages_dir.is_dir():
             return
         for subdir in pages_dir.iterdir():
@@ -89,15 +89,23 @@ class StaticWriter(SiteWriter):
                 continue
             if subdir.name.startswith(".") or subdir.resolve() == self._output_dir.resolve():
                 continue
-            if require_web_files:
-                suffixes = {f.suffix for f in subdir.rglob("*") if f.is_file()}
-                # A folder of notes is never copied as is: its sources would go public.
-                if not suffixes & {".html", ".css"} or suffixes & {".org", ".md"}:
-                    continue
-            dest = self._output_dir / subdir.name
-            if dest.exists():
-                shutil.rmtree(dest)
-            shutil.copytree(subdir, dest)
+            suffixes = {f.suffix for f in subdir.rglob("*") if f.is_file()}
+            # A folder of notes is never copied as is: its sources would go public.
+            if not suffixes & {".html", ".css"} or suffixes & {".org", ".md"}:
+                continue
+            self._copy_folder(subdir)
+
+    def copy_static_folders(self, folders: list[Path]) -> None:
+        for folder in folders:
+            if folder.resolve() != self._output_dir.resolve():
+                self._copy_folder(folder)
+
+    def _copy_folder(self, folder: Path) -> None:
+        """Copy `folder` as /<its name>/, without hidden files (.git, .DS_Store…)."""
+        dest = self._output_dir / folder.name
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.copytree(folder, dest, ignore=shutil.ignore_patterns(".*"))
 
     def write_sitemap(self, pages: list[Page], journal_pages: list[Page], config: SiteConfig) -> None:
         if not config.base_url:

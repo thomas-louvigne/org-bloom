@@ -130,7 +130,8 @@ class LinkResolver:
                 ids, _ = property_anchors(page.raw_content)
                 for org_id, anchor in ids.items():
                     self._ids.setdefault(org_id, (page, anchor))
-        # Folders copied to the site root as they are (external_static_dirs).
+        # Folders copied to the site root as they are, each as /<its name>/
+        # (see static_site_folders).
         self._static_dirs = static_dirs or []
         # False: every link to a hand-made HTML page leads to 404.html.
         self._html_links = html_links
@@ -157,8 +158,8 @@ class LinkResolver:
     def _page_name_to_href(self, target: str, source: str) -> str:
         slug = self._slug_map.get(target.lower())
         if slug is None:
-            # Case/accents/dashes may differ from the page title (e.g. "epoque-tracogna"
-            # vs "Époque Tracogna") yet still resolve to the same page — slugify() folds
+            # Case/accents/dashes may differ from the page title (e.g. "epoque-medievale"
+            # vs "Époque Médiévale") yet still resolve to the same page — slugify() folds
             # accents and normalizes separators the same way page slugs were generated.
             candidate = slugify(target)
             slug = self._slug_map.get(candidate, candidate)
@@ -180,8 +181,11 @@ class LinkResolver:
         page (pages/ subfolder) or in an external static folder."""
         if self._root is None or page is None:
             return True  # nowhere to look: trust the link
-        candidates = [page.source_path.parent / path, *(d / path for d in self._static_dirs)]
-        return any(c.is_file() for c in candidates)
+        if (page.source_path.parent / path).is_file():
+            return True
+        # Each static folder is served as /<its name>/.
+        first = Path(path).parts[:1]
+        return any(first == (d.name,) and (d.parent / path).is_file() for d in self._static_dirs)
 
     def _org_anchor(self, page: Page | None, search: str) -> str:
         """Anchor for an org search option: `*Headline` or `#custom-id`."""

@@ -15,10 +15,10 @@ class TestDecodeLogseqFilename:
         assert _decode_logseq_filename("Dragons") == "Dragons"
 
     def test_triple_lowbar_namespace(self):
-        assert _decode_logseq_filename("Quete-tracogna___session-1") == "session-1"
+        assert _decode_logseq_filename("Projet-jardin___session-1") == "session-1"
 
     def test_no_namespace(self):
-        assert _decode_logseq_filename("Gustave Coste") == "Gustave Coste"
+        assert _decode_logseq_filename("Marie Curie") == "Marie Curie"
 
 
 class TestParseTitle:
@@ -32,15 +32,15 @@ class TestParseTitle:
 
     def test_filename_dashes_to_spaces(self):
         content = "* Content"
-        assert _parse_title(content, "Gustave-Coste") == "Gustave Coste"
+        assert _parse_title(content, "Marie-Curie") == "Marie Curie"
 
     def test_filename_percent_encoded_question_mark(self):
         content = "* Content"
-        assert _parse_title(content, "Quête-Qui a tué Morland %3F") == "Quête Qui a tué Morland ?"
+        assert _parse_title(content, "Enquête-Qui a mangé la tarte %3F") == "Enquête Qui a mangé la tarte ?"
 
     def test_filename_percent_encoded_colon(self):
         content = "* Content"
-        assert _parse_title(content, "Quête Tracogna %3A Au revoir Valtracon") == "Quête Tracogna : Au revoir Valtracon"
+        assert _parse_title(content, "Voyage %3A Au revoir Lisbonne") == "Voyage : Au revoir Lisbonne"
 
 
 class TestParseIsPublic:
@@ -111,10 +111,10 @@ class TestLogseqReader:
         config_dir = tmp_path / "logseq"
         config_dir.mkdir()
         (config_dir / "config.edn").write_text(
-            '{:default-home {:page "Chroniques-Insoumises"}}', encoding="utf-8"
+            '{:default-home {:page "Mon-Jardin"}}', encoding="utf-8"
         )
         reader = LogseqReader(tmp_path)
-        assert reader.default_home_slug == "chroniques-insoumises"
+        assert reader.default_home_slug == "mon-jardin"
 
     def test_default_home_none_when_absent(self, fake_source_dir):
         reader = LogseqReader(fake_source_dir)
