@@ -250,3 +250,26 @@ class TestSiteBuilder:
         )
         with pytest.raises(ValueError, match="No public pages"):
             builder.build(SiteConfig(title="T"), tmp_path / "assets")
+
+
+class TestYouTubeVideos:
+    def test_videos_are_embedded(self, source_dir, output_dir, config):
+        (source_dir / "pages" / "Videos.org").write_text(
+            "#+PUBLIC: true\n* Vidéos\n"
+            "- {{video https://www.youtube.com/watch?v=dQw4w9WgXcQ}}\n"
+            "- [[https://youtu.be/dQw4w9WgXcQ?t=90]]\n"
+            "- [[https://youtu.be/dQw4w9WgXcQ][en lien]]\n",
+            encoding="utf-8",
+        )
+        (source_dir / "pages" / "Logseq.md").write_text(
+            "public:: true\n\n- {{video https://youtu.be/dQw4w9WgXcQ}}\n",
+            encoding="utf-8",
+        )
+        build(source_dir, output_dir, config)
+        org = (output_dir / "videos.html").read_text(encoding="utf-8")
+        assert org.count('<iframe ') == 2
+        assert 'class="video-embed"' in org
+        assert 'src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90"' in org
+        assert '<a href="https://youtu.be/dQw4w9WgXcQ">en lien</a>' in org
+        md = (output_dir / "logseq.html").read_text(encoding="utf-8")
+        assert md.count('<iframe ') == 1

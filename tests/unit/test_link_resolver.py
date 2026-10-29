@@ -319,3 +319,42 @@ class TestOrgLinks:
         result, _ = resolver.preprocess_org("[[mailto:a@b.c][écrire]]")
         assert "[[mailto:a@b.c][écrire]]" in result
         assert resolver.broken_links == []
+
+
+class TestYouTubeVideos:
+    URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    EMBED = "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"
+
+    def test_logseq_macro_in_org(self, resolver):
+        result, _ = resolver.preprocess_org(f"- {{{{video {self.URL}}}}}")
+        assert result.startswith("- @@html:<iframe ")
+        assert f'src="{self.EMBED}"' in result
+        assert result.endswith("</iframe>@@")
+
+    def test_logseq_macro_in_md(self, resolver):
+        result, _ = resolver.preprocess_md(f"- {{{{youtube {self.URL}}}}}")
+        assert result.startswith("- <iframe ")
+        assert "@@" not in result
+
+    def test_bare_link_in_org(self, resolver):
+        result, _ = resolver.preprocess_org(f"[[{self.URL}]]")
+        assert result == f"@@html:{result[len('@@html:'):-2]}@@"
+        assert f'src="{self.EMBED}"' in result
+
+    def test_labeled_link_stays_a_link(self, resolver):
+        result, _ = resolver.preprocess_org(f"[[{self.URL}][la vidéo]]")
+        assert result == f"[[{self.URL}][la vidéo]]"
+
+    def test_other_bare_url_stays_a_link(self, resolver):
+        result, _ = resolver.preprocess_org("[[https://example.com/page]]")
+        assert result == "[[https://example.com/page]]"
+
+    def test_non_youtube_macro_becomes_a_link(self, resolver):
+        result, _ = resolver.preprocess_md("{{video https://vimeo.com/123}}")
+        assert result == "<https://vimeo.com/123>"
+        result, _ = resolver.preprocess_org("{{video https://vimeo.com/123}}")
+        assert result == "[[https://vimeo.com/123]]"
+
+    def test_no_broken_link_reported(self, resolver):
+        resolver.preprocess_org(f"{{{{video {self.URL}}}}} [[{self.URL}]]")
+        assert resolver.broken_links == []

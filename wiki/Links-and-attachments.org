@@ -15,6 +15,19 @@
 
 org-roam links by ID: =[[id:2f0c…][Label]]= leads to the page whose file-level =:PROPERTIES:= drawer has that =:ID:=, or to the headline whose drawer has it. An ID that matches no published page is reported by =--check-links= and its label shown as plain text.
 
+* YouTube videos
+
+A YouTube video is shown in the page, with its player, when it is written:
+
+- Logseq style: ={{video https://www.youtube.com/watch?v=…}}= (or ={{youtube …}}=)
+- Orgamnesia style: a bare link, =[[https://youtu.be/…]]=
+
+A link with a label, =[[https://youtu.be/…][the talk]]=, stays a link. =youtube.com/watch=, =youtu.be=, =/shorts/=, =/live/= and =/embed/= addresses work, and so does a start time (=?t=90=, =&t=1m30s=): the video starts there.
+
+The player is as wide as the text column. It comes from =youtube-nocookie.com=, YouTube's privacy-enhanced mode: no YouTube cookie is set until the reader presses play.
+
+={{video …}}= with an address that is not YouTube (Vimeo…) becomes a plain link to it.
+
 * Images and attachments
 
 Images and attachments are copied into the site when a page links them:

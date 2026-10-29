@@ -6,6 +6,7 @@ from pathlib import Path
 from ..domain.org_syntax import attr_org_to_html, headline_anchors, pandoc_anchor, property_anchors
 from ..domain.page import Page, PageFormat
 from ..domain.paths import is_image, slugify
+from ..domain.video import youtube_embed
 
 # Extensions that identify a non-page file target (to be treated as asset).
 _PAGE_EXTENSIONS = frozenset({".org", ".md", ".html"})
@@ -38,6 +39,10 @@ _LOGBOOK_BLOCK = re.compile(r":LOGBOOK:.*?:END:", re.DOTALL)
 _MD_PROPERTIES_BLOCK = re.compile(r"^(?:[a-z][a-z0-9_-]*::[^\n]*\n?)+", re.IGNORECASE)
 _PUBLIC_DIRECTIVE = re.compile(r"#\+PUBLIC:[^\n]*\n?", re.IGNORECASE)
 _EMPTY_HEADING = re.compile(r"^\*+\s*$", re.MULTILINE)
+# Logseq's video macros: {{video URL}}, {{youtube URL}}.
+_VIDEO_MACRO = re.compile(r"\{\{(?:video|youtube)[ \t]+([^}\s]+)[ \t]*\}\}", re.IGNORECASE)
+# An unlabeled link to a URL, a video if it points to YouTube (Orgamnesia).
+_BARE_URL_LINK = re.compile(r"\[\[(https?://[^\]\s]+)\]\]")
 
 
 def _clean_org(content: str) -> str:
@@ -79,6 +84,7 @@ class _Syntax:
     asset: Callable[[str, str | None], str]  # (path under assets/, label)
     bare_external: Callable[[str], str]  # unlabeled external URL
     external_prefixes: tuple[str, ...]
+    raw_html: Callable[[str], str]  # HTML passed through to the page as is
     page_href_prefix: str = ""
     # Extra prefixes that mark an unlabeled [[target]] as an asset.
     asset_prefixes: tuple[str, ...] = ()
@@ -93,6 +99,7 @@ _SYNTAXES: dict[PageFormat, _Syntax] = {
         asset=_org_asset,
         bare_external=lambda target: f"[[{target}]]",
         external_prefixes=_URL_PREFIXES,
+        raw_html=lambda html: f"@@html:{html}@@",
         # pandoc org parser requires "file:" prefix to emit a real <a> tag
         page_href_prefix="file:",
         org_links=True,
@@ -103,6 +110,7 @@ _SYNTAXES: dict[PageFormat, _Syntax] = {
         asset=_md_asset,
         bare_external=lambda target: f"<{target}>",
         external_prefixes=_URL_PREFIXES,
+        raw_html=lambda html: html,
         asset_prefixes=("assets/",),
     ),
 }
@@ -262,6 +270,21 @@ class LinkResolver:
             return syntax.link(syntax.page_href_prefix + href, label or (linked.title if linked else Path(path).stem))
 
         content = syntax.clean(content)
+
+        # Videos first: their URL must not become a plain link below.
+        def video_macro(m: re.Match) -> str:
+            embed = youtube_embed(m.group(1))
+            if embed is not None:
+                return syntax.raw_html(embed)
+            # Not a YouTube video: at least a link to it.
+            return syntax.bare_external(m.group(1)) if m.group(1).startswith(("http://", "https://")) else m.group(0)
+
+        def video_link(m: re.Match) -> str:
+            embed = youtube_embed(m.group(1))
+            return m.group(0) if embed is None else syntax.raw_html(embed)
+
+        content = _VIDEO_MACRO.sub(video_macro, content)
+        content = _BARE_URL_LINK.sub(video_link, content)
 
         content = _ASSET_REL.sub(lambda m: asset(f"assets/{m.group(1)}", m.group(2)), content)
 
