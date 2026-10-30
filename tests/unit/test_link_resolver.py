@@ -227,10 +227,11 @@ class TestOrgLinks:
     def _resolver(self, root, **options):
         projets = self._page(
             root, "projets",
-            ":PROPERTIES:\n:ID: file-id\n:END:\n* Rust\n:PROPERTIES:\n:ID: rust-id\n:CUSTOM_ID: rouille\n:END:\n",
+            ":PROPERTIES:\n:ID: file-id\n:END:\n* Rust\n:PROPERTIES:\n:ID: rust-id\n:CUSTOM_ID: rouille\n:END:\n"
+            "la <<cible>> ici\n",
             title="Projets",
         )
-        here = self._page(root, "ici", "* Écrire la doc\n** Liens\n:PROPERTIES:\n:CUSTOM_ID: perso\n:END:\n")
+        here = self._page(root, "ici", "* Écrire la doc\n<<ancre>>\n** Liens\n:PROPERTIES:\n:CUSTOM_ID: perso\n:END:\n")
         return LinkResolver([projets, here], home_slug="index", root=root, **options), here
 
     def test_file_link_to_page(self, project):
@@ -263,6 +264,33 @@ class TestOrgLinks:
         result, _ = resolver.preprocess("[[*Écrire la doc]] [[#perso][ici]]", "org", page=here)
         assert "[[#écrire-la-doc][Écrire la doc]]" in result
         assert "[[#liens][ici]]" in result
+
+    def test_file_link_to_a_target(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[file:projets.org::cible][c]] [[file:projets.org::rust][r]]", "org", page=here)
+        assert "[[file:projets.html#target-cible][c]]" in result
+        assert "[[file:projets.html#rust][r]]" in result
+
+    def test_page_name_and_place(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess(
+            "[[Projets::*rust]] [[projets :: Cible][là]] [[Projets::*Absent][a]]", "org", page=here)
+        assert "[[file:projets.html#rust][Projets › rust]]" in result
+        assert "[[file:projets.html#target-cible][là]]" in result
+        assert "[[file:projets.html][a]]" in result
+        assert resolver.broken_links == []
+
+    def test_place_in_an_unknown_page_is_reported(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[Nulle::*Titre]]", "org", source="Ici", page=here)
+        assert "[[file:nulle.html#titre][Nulle › Titre]]" in result
+        assert resolver.broken_links == [("Ici", "Nulle")]
+
+    def test_target_in_the_same_page(self, project):
+        resolver, here = self._resolver(project)
+        result, _ = resolver.preprocess("[[::ancre][ici]] [[::Liens]]", "org", page=here)
+        assert "[[#target-ancre][ici]]" in result
+        assert "[[#liens][Liens]]" in result
 
     def test_file_next_to_the_page(self, project):
         resolver, here = self._resolver(project)
@@ -358,3 +386,67 @@ class TestYouTubeVideos:
     def test_no_broken_link_reported(self, resolver):
         resolver.preprocess_org(f"{{{{video {self.URL}}}}} [[{self.URL}]]")
         assert resolver.broken_links == []
+
+
+class TestLogseqBlocks:
+    U1 = "6a816381-5aa5-4e84-b4ab-7fa3581acd87"
+    U2 = "69faeee4-2432-4c8c-945f-66f9a8e9f3e0"
+
+    @pytest.fixture
+    def resolver(self):
+        org = Page(
+            title="Lugny", slug="lugny", source_path=Path("/g/pages/Lugny.org"), format="org", is_public=True,
+            raw_content=f"* Le plan\n:PROPERTIES:\n:id: {self.U1}\n:END:\n** en 3D\n* Autre\n",
+        )
+        md = Page(
+            title="Recettes", slug="recettes", source_path=Path("/g/pages/Recettes.md"), format="md", is_public=True,
+            raw_content=f"- Pâte brisée\n  id:: {self.U2}\n\t- farine\n- Tarte\n",
+        )
+        return LinkResolver([org, md], home_slug="index")
+
+    def test_block_ref_shows_the_block_text(self, resolver):
+        result, _ = resolver.preprocess_org(f"voir (({self.U1}))")
+        assert result == "voir [[file:lugny.html#le-plan][Le plan]]"
+        result, _ = resolver.preprocess_md(f"voir (({self.U2}))")
+        assert result == f"voir [Pâte brisée](recettes.html#block-{self.U2})"
+
+    def test_labeled_block_refs(self, resolver):
+        result, _ = resolver.preprocess_org(f"[[(({self.U1}))][ici]]")
+        assert result == "[[file:lugny.html#le-plan][ici]]"
+        result, _ = resolver.preprocess_md(f"[là]((({self.U2})))")
+        assert result == f"[là](recettes.html#block-{self.U2})"
+
+    def test_unknown_block_ref_reported(self, resolver):
+        unknown = "00000000-0000-0000-0000-000000000000"
+        result, _ = resolver.preprocess_org(f"(({unknown}))", source="Ici")
+        assert result == f"(({unknown}))"
+        assert resolver.broken_links == [("Ici", f"(({unknown}))")]
+
+    def test_md_block_gets_its_anchor(self, resolver):
+        result, _ = resolver.preprocess_md(f"- Pâte\n  id:: {self.U2}\n  collapsed:: true\n")
+        assert result == f'- Pâte <span id="block-{self.U2}"></span>\n'
+
+    def test_embed_block_in_org(self, resolver):
+        result, _ = resolver.preprocess_org(f"* Visite\n** {{{{embed (({self.U1}))}}}}\n")
+        assert result == "* Visite\n** Le plan\n\n*** en 3D\n"  # the drawer leaves its line
+
+    def test_embed_block_in_md(self, resolver):
+        result, _ = resolver.preprocess_md(f"- Liste\n\t- {{{{embed (({self.U2}))}}}}\n")
+        assert result == "- Liste\n\t- Pâte brisée\n\t    - farine\n"
+
+    def test_embed_page(self, resolver):
+        result, _ = resolver.preprocess_org("* {{embed [[Lugny]]}}\n")
+        assert result == "* [[file:lugny.html][Lugny]]\n** Le plan\n\n*** en 3D\n** Autre\n"
+        result, _ = resolver.preprocess_md("- {{embed [[Recettes]]}}\n")
+        assert result == "- [Recettes](recettes.html)\n\t- Pâte brisée\n\t    - farine\n\t- Tarte\n"
+
+    def test_embed_inside_text_or_other_format_is_a_link(self, resolver):
+        result, _ = resolver.preprocess_org(f"vu {{{{embed (({self.U1}))}}}} et\n* {{{{embed (({self.U2}))}}}}\n")
+        assert result == (f"vu [[file:lugny.html#le-plan][Le plan]] et\n"
+                          f"* [[file:recettes.html#block-{self.U2}][Pâte brisée]]\n")
+
+    def test_embed_of_itself_stops(self):
+        page = Page(title="Boucle", slug="boucle", source_path=Path("/g/b.org"), format="org", is_public=True,
+                    raw_content="* {{embed [[Boucle]]}}\n")
+        result, _ = LinkResolver([page], home_slug="index").preprocess(page.raw_content, "org", "Boucle", page)
+        assert result.count("[[file:boucle.html][Boucle]]") >= 1

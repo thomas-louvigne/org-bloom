@@ -5,11 +5,67 @@
 | =[[Page]]=                       | the page named /Page/ (Logseq wiki link)                 |
 | =[[file:page.org]]=              | the page built from =page.org=                           |
 | =[[file:page.org::*Headline]]=   | a headline of that page                                  |
+| =[[file:page.org::target]]=      | the =<<target>>= of that page                            |
+| =[[Page::*Headline]]=            | a headline of the page named /Page/ (Orgamnesia)         |
+| =[[Page::target]]=               | the =<<target>>= of the page named /Page/ (Orgamnesia)   |
 | =[[id:2f0c…][Label]]=            | the page or headline with that =:ID:= (org-roam)         |
 | =[[*Headline]]=                  | a headline of the same page                              |
+| =[[::target]]=                   | a =<<target>>= of the same page                          |
 | =[[#custom-id]]=                 | the headline with that =:CUSTOM_ID:=                     |
 
+* Links to a headline or a target
+
+After =::= comes the place in the page, written as org-mode's search options:
+
+- =*Headline=: the headline with that title. It is compared without its stars, TODO keyword, priority =[#A]=, statistics cookies =[1/3]= and tags, ignoring case and accents: =[[Recettes::*desserts]]= finds =** DONE Desserts [1/3] :sucre:=.
+- =target=: the place where =<<target>>= is written in the page (it shows nothing on the site), or a radio target =<<<target>>>= (its text stays). Failing that, a headline with that title, as org-mode does.
+- =#custom-id=: the headline with that =:CUSTOM_ID:=.
+
+Without a label, =[[Recettes::*Desserts]]= reads /Recettes › Desserts/. When the place isn't in the page (any more), the link leads to the top of the page. =--check-links= reports the page when it doesn't exist, not a missing headline.
+
 =--check-links= lists every internal link that would 404 — see [[Checks-and-tools][Checks and tools]].
+
+* Logseq block references and embeds
+
+Logseq points to a single block with its id: the block carries an =id= property, which Logseq adds the first time the block is referenced.
+
+- Markdown page: an =id:: …= line under the bullet
+
+  #+BEGIN_SRC markdown
+  - Pâte brisée
+    id:: 6a816381-5aa5-4e84-b4ab-7fa3581acd87
+  #+END_SRC
+
+- Org page: an =:id:= in the headline's drawer
+
+  #+BEGIN_SRC org
+  ,* Pâte brisée
+  :PROPERTIES:
+  :id: 6a816381-5aa5-4e84-b4ab-7fa3581acd87
+  :END:
+  #+END_SRC
+
+| Syntax                                    | On the site                                                       |
+|-------------------------------------------+-------------------------------------------------------------------|
+| =((uuid))=                                | a link to the block, showing the block's first line (as Logseq does) |
+| =[[((uuid))][label]]= (Org), =[label](((uuid)))= (Markdown) | a link to the block, showing /label/              |
+| ={{embed ((uuid))}}=                      | the block and its children, in place of the bullet that holds it |
+| ={{embed [[Page]]}}=                      | a link to the page, then all its blocks under it                  |
+
+The link leads to the block in its page: the block's headline in an Org page, the bullet itself in a Markdown page. An embed must be alone in its bullet (=- {{embed …}}=, =** {{embed …}}=) and point to a page of the same format; otherwise it becomes a link. Embeds inside an embedded block are shown too, three levels deep at most, and a page embedding itself stops there.
+
+Only published blocks are shown: a block of a private page, or under a =:noexport:= or =COMMENT= headline, is not found. Its =((uuid))= stays as it is and =--check-links= reports it. Block properties (=id::=, =collapsed::=…) are not shown on the site.
+
+* Emacs equivalents
+
+Emacs (org-mode, no extra package) has no block references; it links to a place and includes text at export:
+
+| Logseq                  | org-mode                                                                 |
+|-------------------------+--------------------------------------------------------------------------|
+| =((uuid))=              | =[[id:uuid]]= (=:ID:= property, =org-id=), =[[file:page.org::*Headline]]=, =[[file:page.org::#custom-id]]=, =[[file:page.org::target]]= |
+| ={{embed ((uuid))}}=    | =#+INCLUDE: "page.org::*Headline"= (=:only-contents t=, =:minlevel=, =:lines=), applied at export |
+
+org-bloom follows all of these links (see the table at the top). =#+INCLUDE:= is not supported yet. The [[https://github.com/nobiot/org-transclusion][org-transclusion]] package shows included text live in Emacs, with =#+transclude: [[file:page.org::*Headline]]=.
 
 * org-roam IDs
 

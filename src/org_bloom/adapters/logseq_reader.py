@@ -39,18 +39,18 @@ def _decode_logseq_filename(stem: str) -> str:
     return parts[-1]
 
 
+def _directive(pattern: re.Pattern, content: str) -> str:
+    """The value of the first `#+KEY:` / `key::` line `pattern` matches, else ""."""
+    m = pattern.search(content)
+    return m.group(1).strip() if m else ""
+
+
 def _parse_title(content: str, filename_stem: str) -> str:
-    m = _TITLE_DIRECTIVE.search(content)
-    if m:
-        return m.group(1).strip()
+    if title := _directive(_TITLE_DIRECTIVE, content):
+        return title
     decoded = urllib.parse.unquote(_decode_logseq_filename(filename_stem))
     readable = decoded.replace("-", " ").replace("_", " ")
     return readable.strip()
-
-
-def _parse_description(content: str) -> str:
-    m = _DESCRIPTION_DIRECTIVE.search(content)
-    return m.group(1).strip() if m else ""
 
 
 def _parse_icon(content: str) -> str:
@@ -66,9 +66,9 @@ def _parse_tags(content: str) -> list[str]:
     return list(dict.fromkeys(t for t in tags if t))
 
 
-def _parse_author(content: str) -> str:
-    m = _AUTHOR_DIRECTIVE.search(content)
-    return m.group(1).strip() if m else ""
+def _shown_tags(content: str) -> list[str]:
+    """The page tags listed on the site: noexport only keeps a page private."""
+    return [t for t in _parse_tags(content) if t != NOEXPORT]
 
 
 def _parse_date_directive(content: str) -> datetime.date | None:
@@ -217,11 +217,11 @@ class LogseqReader(PageRepository):
                 source_path=path,
                 format=_page_format(path),
                 is_public=is_public,
-                description=_parse_description(content),
+                description=_directive(_DESCRIPTION_DIRECTIVE, content),
                 icon=_parse_icon(content),
                 date=_parse_date_directive(content),
-                author=_parse_author(content),
-                tags=[t for t in _parse_tags(content) if t != NOEXPORT],
+                author=_directive(_AUTHOR_DIRECTIVE, content),
+                tags=_shown_tags(content),
             )
 
     def find_journals(self) -> Iterator[Page]:
@@ -238,8 +238,7 @@ class LogseqReader(PageRepository):
                 continue
             date = _parse_date_directive(content) or file_date
             date_label = self._format_title(date)
-            title_match = _TITLE_DIRECTIVE.search(content)
-            title = title_match.group(1).strip() if title_match else ""
+            title = _directive(_TITLE_DIRECTIVE, content)
             if self._parse_date(title) in (date, file_date):
                 # org-roam dailies are titled "2026-10-12": the date shown
                 # under the title would repeat it.
@@ -257,8 +256,8 @@ class LogseqReader(PageRepository):
                 date=date,
                 date_label=date_label,
                 headline=_parse_headline(content, fmt, title),
-                author=_parse_author(content),
-                tags=[t for t in _parse_tags(content) if t != NOEXPORT],
+                author=_directive(_AUTHOR_DIRECTIVE, content),
+                tags=_shown_tags(content),
             ))
         yield from sorted(pages, key=lambda p: p.date, reverse=True)  # type: ignore[arg-type]
 

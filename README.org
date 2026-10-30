@@ -8,7 +8,7 @@ org-bloom turns a folder of notes into a static website — HTML + CSS + vanilla
 
 [[file:docs/themes.png]]
 
-- wiki links, org links and org-roam IDs, images (sized and aligned with =#+ATTR_ORG=) and attachments
+- wiki links, org links (to a page, a headline or a =<<target>>=), org-roam IDs, Logseq block references and embeds, images (sized and aligned with =#+ATTR_ORG=) and attachments
 - blog and RSS from Logseq journals or org-roam dailies
 - tags, readable dates, authors
 - private notes with =#+PUBLIC= and =:noexport:=

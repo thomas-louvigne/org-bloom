@@ -262,13 +262,19 @@ def _notify_desktop(message: str) -> None:
         )
 
 
+def _by_target(pairs: list[tuple[str, str]]) -> dict[str, list[str]]:
+    """(source, target) pairs grouped by target, sources in order."""
+    grouped: dict[str, list[str]] = {}
+    for source, target in pairs:
+        grouped.setdefault(target, []).append(source)
+    return grouped
+
+
 def _report_missing_files(missing_files: list[tuple[str, str]], external_deps: bool) -> None:
     """HTML pages linked but left out of the site: their links lead to 404.html."""
     if not missing_files:
         return
-    by_target: dict[str, list[str]] = {}
-    for source, target in missing_files:
-        by_target.setdefault(target, []).append(source)
+    by_target = _by_target(missing_files)
     reason = "not found" if external_deps else "left out by --no-external-deps"
     _warn(f"{len(by_target)} linked HTML page(s) {reason}, linked to 404.html instead:")
     for target, sources in sorted(by_target.items()):
@@ -281,10 +287,7 @@ def _report_broken_links(broken_links: list[tuple[str, str]]) -> None:
         return
 
     click.echo(f"\n{len(broken_links)} broken link(s) found (would 404):")
-    by_target: dict[str, list[str]] = {}
-    for source, target in broken_links:
-        by_target.setdefault(target, []).append(source)
-    for target, sources in sorted(by_target.items()):
+    for target, sources in sorted(_by_target(broken_links).items()):
         click.echo(f"  [[{target}]]")
         for source in sources:
             click.echo(f"    referenced in: {source}")

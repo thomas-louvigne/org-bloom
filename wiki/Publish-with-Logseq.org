@@ -41,6 +41,9 @@ or every page at once with =all_public = true= (=:publishing/all-pages-public?= 
 | =title::=, =date::=, =author::=             | page title, date and author                       |
 | =../assets/…= images and files              | copied into the site                              |
 | ={{video https://youtu.be/…}}=              | the YouTube video, playable in the page           |
+| =((uuid))=, =[[((uuid))][label]]=, =[label](((uuid)))= | link to that block, showing its text or the label |
+| ={{embed ((uuid))}}=, ={{embed [[Page]]}}=  | the block (with its children) or the page, in place |
+| =id::=, =collapsed::= and other block properties | not shown                                   |
 | journals                                    | the blog, with an RSS feed (=rss = true=)         |
 | nested blocks                               | nested bullets, foldable with =tree_view = true=  |
 

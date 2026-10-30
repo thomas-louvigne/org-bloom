@@ -5,6 +5,18 @@ pip install -e ".[dev]"
 python3 -m pytest
 #+END_SRC
 
+* Code layout
+
+=src/org_bloom/=, from the notes to the site:
+
+| Folder      | Role                                                                                     |
+|-------------+------------------------------------------------------------------------------------------|
+| =adapters/= | the outside world: reading the notes (=logseq_reader=), configs (TOML, =config.edn=), Pandoc, writing the site (=static_writer=), themes |
+| =domain/=   | what a note means, without side effects: =page= (data), =org_syntax= (headlines, anchors, =<<targets>>=, the place a link points to), =org_images= (=#+ATTR_ORG=), =blocks= (Logseq blocks and their ids), dates, slugs, videos |
+| =services/= | the build: =site_builder= runs it page by page; =link_resolver= rewrites the links of a page before Pandoc, with =site_index= (finding pages, ids and blocks), =page_syntax= (how Org and Markdown write links) and =embeds= (Logseq's ={{embed}}=); =html_transforms= reworks Pandoc's HTML; =tag_index=, =site_config= |
+| =ports/=    | the interfaces the services rely on                                                      |
+| =cli.py=    | the =org-bloom= command                                                                  |
+
 * Editing this wiki
 
 The wiki is written in org-mode and lives in the =wiki/= folder of the repository, so it is reviewed and versioned with the code. Each =Page-name.org= file is a wiki page; =Home.org= is the front page, =_Sidebar.org= and =_Footer.org= are shown on every page. Links between pages use the file name without its extension: =[[Page-name][Label]]=.

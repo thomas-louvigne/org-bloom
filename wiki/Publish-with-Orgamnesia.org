@@ -30,6 +30,7 @@ org-bloom build ~/Orgamnesia/my-project
 - =.trash= (Orgamnesia's trash) and other hidden folders are skipped;
 - the =* Élody= headline Orgamnesia writes at the top of a new page =Élody.org= is not shown again under the page title;
 - =*= headlines stay real headings;
+- links to a headline or a target, =[[Page::*Headline]]= and =[[Page::target]]= (=<<target>>=), lead to that place in the page (see [[Links-and-attachments][Links and attachments]]);
 - a bare YouTube link, =[[https://youtu.be/…]]=, shows the video in the page (see [[Links-and-attachments][Links and attachments]]).
 
 * Choose what is published

@@ -1,14 +1,18 @@
 """Org-mode syntax the site needs to understand before Pandoc runs: headline
-anchors (as Pandoc names them), `:ID:` / `:CUSTOM_ID:` properties, the
-title headline Orgamnesia puts at the top of a page and `#+ATTR_ORG` image
-widths."""
+anchors (as Pandoc names them), `:ID:` / `:CUSTOM_ID:` properties,
+`<<targets>>`, the places org links point to and the title headline
+Orgamnesia puts at the top of a page."""
 
 import re
+import unicodedata
 from collections.abc import Iterator
+from typing import NamedTuple
 
 from .paths import slugify
 
 _HEADLINE = re.compile(r"^(\*+)[ \t]+(.*)$")
+# The stars of any headline, an empty one (`*`) included.
+_STARS = re.compile(r"^(\*+)(?=[ \t]|$)")
 _DRAWER_PROPERTY = re.compile(r"^[ \t]*:(ID|CUSTOM_ID):[ \t]*(\S+)[ \t]*$", re.IGNORECASE)
 _TODO_LINE = re.compile(r"^#\+(?:SEQ_|TYP_)?TODO:(.*)$", re.IGNORECASE | re.MULTILINE)
 _DEFAULT_TODO_KEYWORDS = ("TODO", "DONE")
@@ -21,6 +25,12 @@ _PLAIN = re.compile(r"\[\[([^\]]+)\]\]")
 _EMPHASIS = re.compile(r"(?<![\w])([*/_=~+])(\S(?:.*?\S)?)\1(?![\w])")
 # Lines that may come before a page's first headline without being content.
 _PREAMBLE_LINE = re.compile(r"^[ \t]*(?:#\+\w+:.*|:\w+:.*|:END:|[a-z][\w-]*::.*)?$", re.IGNORECASE)
+_COOKIE = re.compile(r"\[\d*/\d*\]|\[\d*%\]")
+# <<target>> and <<<radio target>>>; no < > or newline inside, no space at the ends.
+_NAME = r"[^<>\s](?:[^<>\n]*[^<>\s])?"
+_TARGET = re.compile(rf"<<<({_NAME})>>>|<<({_NAME})>>")
+_BLOCK_BEGIN = re.compile(r"^[ \t]*#\+BEGIN_", re.IGNORECASE)
+_BLOCK_END = re.compile(r"^[ \t]*#\+END_", re.IGNORECASE)
 
 
 def todo_keywords(content: str) -> set[str]:
@@ -66,10 +76,24 @@ def filetags(content: str) -> list[str]:
     return list(dict.fromkeys(tags))
 
 
-def _headlines(content: str) -> Iterator[tuple[int, int, str, str | None, list[str]]]:
-    """(line index, level, title, anchor, tags) of every headline. The anchor
-    is None for a COMMENT headline, which Pandoc leaves out; Pandoc keeps the
-    priority cookie in the anchor, so `* TODO [#A] Fix` is `#a-fix`."""
+def headline_level(line: str) -> int:
+    """The number of stars of a headline (`*` alone counts), 0 for other lines."""
+    m = _STARS.match(line)
+    return len(m.group(1)) if m else 0
+
+
+class Headline(NamedTuple):
+    line: int  # index of its line in the page
+    level: int
+    title: str  # as org links name it (see headline_text)
+    # Its id in Pandoc's HTML; None for a COMMENT headline, which Pandoc leaves out.
+    anchor: str | None
+    tags: list[str]
+
+
+def headlines(content: str) -> Iterator[Headline]:
+    """Every headline of a page. Pandoc keeps the priority cookie in the
+    anchor, so `* TODO [#A] Fix` is `#a-fix`."""
     keywords = todo_keywords(content)
     for i, line in enumerate(content.splitlines()):
         m = _HEADLINE.match(line)
@@ -78,33 +102,93 @@ def _headlines(content: str) -> Iterator[tuple[int, int, str, str | None, list[s
             anchor = None if text.startswith("COMMENT ") or text == "COMMENT" else pandoc_anchor(text)
             tags_match = _TRAILING_TAGS.search(m.group(2))
             tags = [t for t in tags_match.group(1).split(":") if t] if tags_match else []
-            yield i, len(m.group(1)), headline_text(m.group(2), keywords), anchor, tags
+            yield Headline(i, len(m.group(1)), headline_text(m.group(2), keywords), anchor, tags)
 
 
-def headline_anchors(content: str) -> dict[str, str]:
-    """Anchor of every exported headline, keyed by its title (`[[*Title]]` links)."""
-    anchors: dict[str, str] = {}
-    for _, _, title, anchor, _ in _headlines(content):
-        if anchor is not None:
-            anchors.setdefault(title, anchor)
-    return anchors
+def exported_headlines(content: str) -> Iterator[Headline]:
+    """The headlines Pandoc exports: the subtrees of COMMENT and :noexport:
+    headlines are left out. Their anchor is never None."""
+    skip_below: int | None = None
+    for h in headlines(content):
+        if skip_below is not None and h.level > skip_below:
+            continue
+        skip_below = None
+        if h.anchor is None or NOEXPORT in h.tags:
+            skip_below = h.level
+            continue
+        yield h
 
 
 def headline_tags(content: str) -> list[tuple[str, str, list[str]]]:
-    """(title, anchor, tags) of every exported headline carrying tags; the
-    subtrees of COMMENT and :noexport: headlines are left out, as Pandoc does."""
-    tagged: list[tuple[str, str, list[str]]] = []
-    skip_below: int | None = None
-    for _, level, title, anchor, tags in _headlines(content):
-        if skip_below is not None and level > skip_below:
-            continue
-        skip_below = None
-        if anchor is None or NOEXPORT in tags:
-            skip_below = level
-            continue
-        if tags:
-            tagged.append((title, anchor, tags))
-    return tagged
+    """(title, anchor, tags) of every exported headline carrying tags."""
+    return [(h.title, h.anchor, h.tags) for h in exported_headlines(content) if h.tags]
+
+
+def _fold(text: str) -> str:
+    """Case, accents and runs of spaces ignored, as Orgamnesia compares names."""
+    text = unicodedata.normalize("NFKD", text.lower())
+    return " ".join("".join(c for c in text if not unicodedata.combining(c)).split())
+
+
+def _headline_key(title: str) -> str:
+    """A headline's title compared without its statistics cookies (`[1/3]`, `[50%]`)."""
+    return _fold(_COOKIE.sub(" ", title))
+
+
+def target_anchor(name: str) -> str:
+    """The id of the `<<name>>` target in the page (see expand_targets)."""
+    return f"target-{slugify(name) or 'x'}"
+
+
+def _targets(content: str) -> dict[str, str]:
+    """Anchor of every `<<target>>` and `<<<radio target>>>`, keyed by its folded name."""
+    anchors: dict[str, str] = {}
+    for line, in_block in _lines(content):
+        if not in_block:
+            for m in _TARGET.finditer(line):
+                name = m.group(1) or m.group(2)
+                anchors.setdefault(_fold(name), target_anchor(name))
+    return anchors
+
+
+def _lines(content: str) -> Iterator[tuple[str, bool]]:
+    """Each line of `content` (with its newline) and whether it belongs to a
+    #+BEGIN_…/#+END_… block, where `<<…>>` is code, not a target."""
+    in_block = False
+    for line in content.splitlines(keepends=True):
+        if _BLOCK_BEGIN.match(line):
+            in_block = True
+        yield line, in_block
+        if _BLOCK_END.match(line):
+            in_block = False
+
+
+def expand_targets(content: str) -> str:
+    """Turn `<<target>>` into an empty anchor and `<<<radio target>>>` into its
+    text after one. Pandoc only reads targets without spaces, and names their
+    id after the raw text."""
+    def anchor(m: re.Match) -> str:
+        name = m.group(1) or m.group(2)
+        span = f'@@html:<span id="{target_anchor(name)}"></span>@@'
+        return span + name if m.group(1) else span
+
+    return "".join(line if in_block else _TARGET.sub(anchor, line) for line, in_block in _lines(content))
+
+
+def place_anchor(content: str, place: str) -> str | None:
+    """Anchor of the place an org search option names in a page:
+    `*Headline`, `#custom-id`, or a `<<target>>` — failing that, a headline of
+    that name, as org-mode does. Headlines and targets are compared ignoring
+    case, accents and statistics cookies. None when the page has no such place."""
+    if place.startswith("#"):
+        return property_anchors(content)[1].get(place[1:])
+    by_title: dict[str, str] = {}
+    for h in headlines(content):
+        if h.anchor is not None:
+            by_title.setdefault(_headline_key(h.title), h.anchor)
+    if place.startswith("*"):
+        return by_title.get(_headline_key(place[1:]))
+    return _targets(content).get(_fold(place)) or by_title.get(_headline_key(place))
 
 
 def property_anchors(content: str) -> tuple[dict[str, str], dict[str, str]]:
@@ -113,7 +197,7 @@ def property_anchors(content: str) -> tuple[dict[str, str], dict[str, str]]:
     any headline). Returns (ids, custom_ids)."""
     ids: dict[str, str] = {}
     custom_ids: dict[str, str] = {}
-    anchor_at = {i: anchor for i, _, _, anchor, _ in _headlines(content)}
+    anchor_at = {h.line: h.anchor for h in headlines(content)}
     anchor: str | None = ""
     for i, line in enumerate(content.splitlines()):
         if i in anchor_at:
@@ -140,86 +224,3 @@ def drop_title_headline(content: str, names: list[str]) -> str:
         if not _PREAMBLE_LINE.match(line.rstrip("\n")):
             return content
     return content
-
-
-
-_AFFILIATED = re.compile(r"^[ \t]*#\+\w+:", re.IGNORECASE)
-_ATTR_ORG = re.compile(r"^([ \t]*)#\+ATTR_ORG:(.*)$", re.IGNORECASE)
-_ATTR_HTML = re.compile(r"^[ \t]*#\+ATTR_HTML:(.*)$", re.IGNORECASE)
-# :key value pairs; a value runs up to the next :key, so it may hold spaces.
-_PLIST = re.compile(r"(?<!\S):([\w-]+)(?:[ \t]+(.*?))?(?=[ \t]+:[\w-]+(?:[ \t]|$)|[ \t]*$)")
-# #+ATTR_ORG keys that mean the same thing as an HTML attribute.
-_HTML_KEYS = ("alt", "title", "height", "class", "id")
-_MARGINS = {
-    "center": "margin-left:auto;margin-right:auto",
-    "right": "margin-left:auto;margin-right:0",
-}
-
-
-def _plist(text: str) -> dict[str, str]:
-    return {m.group(1).lower(): (m.group(2) or "").strip() for m in _PLIST.finditer(text)}
-
-
-def _html_width(value: str) -> str:
-    """Org's image width as HTML wants it: 981 and 981px are pixels, 50% stays a
-    percentage and a fraction like 0.5 (part of the text width) becomes 50%."""
-    if re.fullmatch(r"\d+px", value, re.IGNORECASE):
-        return value[:-2]
-    if re.fullmatch(r"0?\.\d+|1\.0*", value):
-        return f"{float(value) * 100:g}%"
-    return value
-
-
-def _org_image_attrs(org: dict[str, str]) -> dict[str, str]:
-    """The HTML attributes for an image's #+ATTR_ORG: :width, :align
-    (left/center/right) and :background (a color, for transparent images), plus
-    the HTML ones people also write there (:alt, :title, :height, :class, :id,
-    :style). Emacs-only options are left out."""
-    attrs = {key: org[key] for key in _HTML_KEYS if org.get(key)}
-    if org.get("width"):
-        attrs["width"] = _html_width(org["width"])
-    style = [org["style"].rstrip(";")] if org.get("style") else []
-    if org.get("align", "").lower() in _MARGINS:
-        style.append(_MARGINS[org["align"].lower()])
-    background = org.get("background", "").strip("\"")
-    if background and background.lower() not in ("t", "nil"):
-        style.append(f"background-color:{background}")
-    if style:
-        attrs["style"] = ";".join(style)
-    return attrs
-
-
-def attr_org_to_html(content: str) -> str:
-    """Turn the image options of `#+ATTR_ORG:` (how Emacs shows an image) into
-    `#+ATTR_HTML:`, which Pandoc applies to the <img>. Pandoc ignores
-    #+ATTR_ORG and, worse, drops a #+CAPTION above it, so every #+ATTR_ORG line
-    goes. A key also set by an #+ATTR_HTML on the same image keeps that value:
-    it is meant for the web."""
-    lines = content.splitlines(keepends=True)
-    out = []
-    i = 0
-    while i < len(lines):
-        if not _AFFILIATED.match(lines[i]):
-            out.append(lines[i])
-            i += 1
-            continue
-        block_end = i
-        while block_end < len(lines) and _AFFILIATED.match(lines[block_end]):
-            block_end += 1
-        block = lines[i:block_end]
-        html_keys = set()
-        for line in block:
-            if m := _ATTR_HTML.match(line.rstrip("\n")):
-                html_keys |= _plist(m.group(1)).keys()
-        for line in block:
-            attr = _ATTR_ORG.match(line.rstrip("\n"))
-            if attr is None:
-                out.append(line)
-                continue
-            attrs = {k: v for k, v in _org_image_attrs(_plist(attr.group(2))).items() if k not in html_keys}
-            if attrs:
-                newline = "\n" if line.endswith("\n") else ""
-                options = " ".join(f":{key} {value}" for key, value in attrs.items())
-                out.append(f"{attr.group(1)}#+ATTR_HTML: {options}{newline}")
-        i = block_end
-    return "".join(out)
